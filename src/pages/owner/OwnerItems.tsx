@@ -35,7 +35,7 @@ const OwnerItems = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", owner_price: "", category_id: "", image_url_1: "", image_url_2: "", image_url_3: "" });
+  const [form, setForm] = useState({ name: "", description: "", owner_price: "", category_id: "", payment_type: "cash_on_delivery", image_url_1: "", image_url_2: "", image_url_3: "" });
 
   useEffect(() => {
     fetchData();
@@ -77,14 +77,15 @@ const OwnerItems = () => {
       category_id: form.category_id,
       owner_id: session.user.id,
       image_urls: urls,
-    });
+      payment_type: form.payment_type,
+    } as any);
 
     setSubmitting(false);
     if (error) {
       toast({ title: "Failed to add item", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Item submitted for approval" });
-      setForm({ name: "", description: "", owner_price: "", category_id: "", image_url_1: "", image_url_2: "", image_url_3: "" });
+      setForm({ name: "", description: "", owner_price: "", category_id: "", payment_type: "cash_on_delivery", image_url_1: "", image_url_2: "", image_url_3: "" });
       setDialogOpen(false);
       fetchData();
     }
@@ -136,6 +137,16 @@ const OwnerItems = () => {
               <div>
                 <Label>Rental Price (₹) *</Label>
                 <Input type="number" value={form.owner_price} onChange={e => setForm(f => ({ ...f, owner_price: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Payment Type *</Label>
+                <Select value={form.payment_type} onValueChange={v => setForm(f => ({ ...f, payment_type: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select payment type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash_on_delivery">Cash on Delivery</SelectItem>
+                    <SelectItem value="prepaid">Prepaid</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Image URL 1 *</Label>

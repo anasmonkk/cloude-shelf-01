@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +26,6 @@ const ItemDetail = () => {
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cash_on_delivery" | "prepaid">("cash_on_delivery");
   const [panchayaths, setPanchayaths] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
   const [selectedPanchayath, setSelectedPanchayath] = useState("");
@@ -38,7 +36,7 @@ const ItemDetail = () => {
       const [itemRes, delRes] = await Promise.all([
         supabase
           .from("items")
-          .select("id, name, description, owner_price, status, image_urls, owner_id, category_id, categories(name, commission_rate)")
+          .select("id, name, description, owner_price, status, image_urls, owner_id, category_id, payment_type, categories(name, commission_rate)")
           .eq("id", id!)
           .single(),
         supabase.from("delivery_config").select("fixed_charge").limit(1).single(),
@@ -98,6 +96,7 @@ const ItemDetail = () => {
       const commissionRate = (item.categories as any)?.commission_rate || 0;
       const ownerPrice = Number(item.owner_price);
       const commissionAmount = ownerPrice * commissionRate / 100;
+      const paymentMethod = item.payment_type || "cash_on_delivery";
       const totalAmount = ownerPrice + deliveryCharge;
       const orderNumber = `ORD-${Date.now()}`;
 
@@ -297,18 +296,8 @@ const ItemDetail = () => {
               </div>
             )}
 
-            <div>
-              <Label className="font-body">Payment Method</Label>
-              <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)} className="mt-2 space-y-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cash_on_delivery" id="cod" />
-                  <Label htmlFor="cod" className="font-body font-normal cursor-pointer">Cash on Delivery</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="prepaid" id="prepaid" />
-                  <Label htmlFor="prepaid" className="font-body font-normal cursor-pointer">Prepaid</Label>
-                </div>
-              </RadioGroup>
+            <div className="bg-muted/50 rounded-lg p-3 text-sm font-body">
+              <div className="flex justify-between mb-1"><span className="text-muted-foreground">Payment</span><span className="font-medium text-foreground">{item?.payment_type === "prepaid" ? "Prepaid" : "Cash on Delivery"}</span></div>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-3 text-sm font-body">

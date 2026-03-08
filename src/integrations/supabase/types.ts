@@ -196,6 +196,7 @@ export type Database = {
           name: string
           owner_id: string
           owner_price: number
+          payment_type: string
           status: Database["public"]["Enums"]["item_status"]
           updated_at: string
         }
@@ -209,6 +210,7 @@ export type Database = {
           name: string
           owner_id: string
           owner_price: number
+          payment_type?: string
           status?: Database["public"]["Enums"]["item_status"]
           updated_at?: string
         }
@@ -222,6 +224,7 @@ export type Database = {
           name?: string
           owner_id?: string
           owner_price?: number
+          payment_type?: string
           status?: Database["public"]["Enums"]["item_status"]
           updated_at?: string
         }
