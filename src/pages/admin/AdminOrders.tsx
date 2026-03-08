@@ -1,38 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, Filter } from "lucide-react";
-
-const mockOrders = [
-  { id: "ORD-156", customer: "Arun Kumar", owner: "Priya's Collection", item: "Gold Necklace Set", amount: "₹1,155", status: "Waiting Confirmation", date: "2026-03-08" },
-  { id: "ORD-155", customer: "Meera S", owner: "Rajan Tools", item: "Drill Machine", amount: "₹760", status: "Delivered", date: "2026-03-07" },
-  { id: "ORD-154", customer: "Suresh P", owner: "Priya's Collection", item: "Bridal Saree", amount: "₹2,180", status: "Return Pending", date: "2026-03-06" },
-  { id: "ORD-153", customer: "Deepa M", owner: "Kumar Electronics", item: "Speaker System", amount: "₹450", status: "In Transit", date: "2026-03-06" },
-  { id: "ORD-152", customer: "Rajesh T", owner: "Furniture Hub", item: "Event Table Set", amount: "₹1,800", status: "Returned", date: "2026-03-05" },
-  { id: "ORD-151", customer: "Anitha R", owner: "Priya's Collection", item: "Diamond Earrings", amount: "₹950", status: "Delivered", date: "2026-03-04" },
-];
+import { Search, Eye, Filter, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusColors: Record<string, string> = {
-  "Waiting Confirmation": "bg-amber-100 text-amber-800",
-  "Delivered": "bg-emerald-100 text-emerald-800",
-  "Return Pending": "bg-orange-100 text-orange-800",
-  "In Transit": "bg-blue-100 text-blue-800",
-  "Returned": "bg-gray-100 text-gray-800",
+  pending: "bg-amber-100 text-amber-800",
+  confirmed: "bg-blue-100 text-blue-800",
+  in_transit: "bg-indigo-100 text-indigo-800",
+  delivered: "bg-emerald-100 text-emerald-800",
+  return_pending: "bg-orange-100 text-orange-800",
+  returned: "bg-gray-100 text-gray-800",
+  cancelled: "bg-red-100 text-red-800",
+};
+
+const statusLabel = (s: string) => {
+  const map: Record<string, string> = {
+    pending: "Pending", confirmed: "Confirmed", in_transit: "In Transit",
+    delivered: "Delivered", return_pending: "Return Pending", returned: "Returned", cancelled: "Cancelled",
+  };
+  return map[s] || s;
 };
 
 const AdminOrders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mockOrders.filter(o => {
-    const matchSearch = o.id.toLowerCase().includes(search.toLowerCase()) || o.customer.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, order_number, status, total_amount, created_at, customer_id, owner_id, item_id, items(name), profiles:customer_id(full_name)")
+        .order("created_at", { ascending: false });
+
+      if (!error && data) setOrders(data);
+      setLoading(false);
+    };
+    fetchOrders();
+  }, []);
+
+  const filtered = orders.filter(o => {
+    const matchSearch = o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
+      (o.profiles as any)?.full_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || o.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-4">
@@ -48,42 +68,43 @@ const AdminOrders = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Waiting Confirmation">Waiting Confirmation</SelectItem>
-            <SelectItem value="In Transit">In Transit</SelectItem>
-            <SelectItem value="Delivered">Delivered</SelectItem>
-            <SelectItem value="Return Pending">Return Pending</SelectItem>
-            <SelectItem value="Returned">Returned</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="in_transit">In Transit</SelectItem>
+            <SelectItem value="delivered">Delivered</SelectItem>
+            <SelectItem value="return_pending">Return Pending</SelectItem>
+            <SelectItem value="returned">Returned</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="font-display text-lg">Orders</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="font-display text-lg">Orders ({filtered.length})</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
-                <TableHead className="hidden md:table-cell">Owner</TableHead>
-                <TableHead className="hidden lg:table-cell">Item</TableHead>
+                <TableHead className="hidden md:table-cell">Item</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filtered.length === 0 && (
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No orders found</TableCell></TableRow>
+              )}
               {filtered.map((o) => (
                 <TableRow key={o.id}>
-                  <TableCell className="font-display font-medium">{o.id}</TableCell>
-                  <TableCell className="font-body">{o.customer}</TableCell>
-                  <TableCell className="hidden md:table-cell font-body text-muted-foreground">{o.owner}</TableCell>
-                  <TableCell className="hidden lg:table-cell font-body text-muted-foreground">{o.item}</TableCell>
-                  <TableCell className="font-display font-semibold">{o.amount}</TableCell>
-                  <TableCell><Badge className={statusColors[o.status] || ""}>{o.status}</Badge></TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{o.date}</TableCell>
-                  <TableCell><Button size="sm" variant="ghost"><Eye className="h-4 w-4" /></Button></TableCell>
+                  <TableCell className="font-display font-medium">{o.order_number}</TableCell>
+                  <TableCell className="font-body">{(o.profiles as any)?.full_name || "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell font-body text-muted-foreground">{(o.items as any)?.name || "—"}</TableCell>
+                  <TableCell className="font-display font-semibold">₹{Number(o.total_amount).toLocaleString("en-IN")}</TableCell>
+                  <TableCell><Badge className={statusColors[o.status] || ""}>{statusLabel(o.status)}</Badge></TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{new Date(o.created_at).toLocaleDateString("en-IN")}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
