@@ -34,6 +34,8 @@ const roleDashboards: Record<string, string> = {
 };
 
 const useEmailLogin = (role: string | undefined) => role === "superadmin";
+const useMobileOnlyLogin = (role: string | undefined) => role === "owner";
+const VENDOR_DEFAULT_PASSWORD = "cloudshelf_vendor_2024";
 
 const RoleLogin = () => {
   const { role } = useParams<{ role: string }>();
