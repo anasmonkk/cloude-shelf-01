@@ -64,7 +64,7 @@ const Login = () => {
       }
 
       toast({ title: "Login successful", description: "Welcome back!" });
-      navigate("/customer");
+      navigate(redirectTo || "/customer");
     } catch (error: any) {
       toast({
         title: "Login failed",

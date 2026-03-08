@@ -22,7 +22,7 @@ const BrowseItems = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toast({ title: "Login required", description: "Please log in to view item details.", variant: "destructive" });
-      navigate("/login");
+      navigate(`/login?redirect=/item/${itemId}`);
       return;
     }
     navigate(`/item/${itemId}`);
