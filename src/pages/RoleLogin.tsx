@@ -60,6 +60,11 @@ const RoleLogin = () => {
         toast({ title: "Missing credentials", description: "Please enter your email and password.", variant: "destructive" });
         return;
       }
+    } else if (isMobileOnly) {
+      if (!mobile || mobile.length < 10) {
+        toast({ title: "Missing credentials", description: "Please enter your 10-digit mobile number.", variant: "destructive" });
+        return;
+      }
     } else {
       if (!mobile || mobile.length < 10 || !password) {
         toast({ title: "Missing credentials", description: "Please enter your mobile number and password.", variant: "destructive" });
