@@ -38,7 +38,7 @@ const DashboardHome = () => {
           supabase.from("user_roles").select("role"),
           supabase.from("areas").select("id", { count: "exact", head: true }),
           supabase.from("orders").select("order_number, status, total_amount, created_at").order("created_at", { ascending: false }).limit(5),
-          supabase.from("settlements").select("id, amount, status, user_id, profiles:user_id(full_name)").eq("status", "pending").limit(5),
+          supabase.from("settlements").select("id, amount, status, user_id").eq("status", "pending").limit(5),
         ]);
 
         const roles = rolesRes.data || [];
