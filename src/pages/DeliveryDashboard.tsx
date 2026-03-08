@@ -140,7 +140,7 @@ const MyDeliveries = () => {
   }, []);
 
   const updateStatus = async (orderId: string, status: string) => {
-    const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
+    const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", orderId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Status updated" });
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
