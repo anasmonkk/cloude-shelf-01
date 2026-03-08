@@ -87,7 +87,7 @@ const DashboardHome = () => {
 
   const statCards = [
     { label: "Total Orders", value: stats.orders.toString(), icon: ShoppingBag },
-    { label: "Active Owners", value: stats.owners.toString(), icon: Users },
+    { label: "Active Vendors", value: stats.owners.toString(), icon: Users },
     { label: "Delivery Staff", value: stats.deliveryStaff.toString(), icon: Truck },
     { label: "Areas", value: stats.areas.toString(), icon: MapPin },
   ];
