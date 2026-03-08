@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Phone, User, Mail, Lock } from "lucide-react";
+import { Phone, User, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,6 @@ const Register = () => {
 
   const [role] = useState(defaultRole);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mobile, setMobile] = useState("");
   const [stateId, setStateId] = useState("");
@@ -35,14 +34,12 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch states on mount
   useEffect(() => {
     supabase.from("states").select("id, name").then(({ data }) => {
       if (data) setStates(data);
     });
   }, []);
 
-  // Fetch districts when state changes
   useEffect(() => {
     if (!stateId) { setDistricts([]); return; }
     supabase.from("districts").select("id, name").eq("state_id", stateId).then(({ data }) => {
@@ -50,7 +47,6 @@ const Register = () => {
     });
   }, [stateId]);
 
-  // Fetch panchayaths when district changes
   useEffect(() => {
     if (!districtId) { setPanchayaths([]); return; }
     supabase.from("panchayaths").select("id, name").eq("district_id", districtId).then(({ data }) => {
@@ -58,13 +54,11 @@ const Register = () => {
     });
   }, [districtId]);
 
-  // Fetch wards + area when panchayath changes
   useEffect(() => {
     if (!panchayathId) { setWards([]); setArea("—"); return; }
     supabase.from("wards").select("id, ward_number").eq("panchayath_id", panchayathId).order("ward_number").then(({ data }) => {
       if (data) setWards(data);
     });
-    // Get area name via area_panchayaths
     supabase.from("area_panchayaths").select("areas(name)").eq("panchayath_id", panchayathId).limit(1).then(({ data }) => {
       if (data && data.length > 0) {
         const areaData = data[0].areas as unknown as { name: string };
@@ -75,7 +69,7 @@ const Register = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password || !mobile || mobile.length < 10) {
+    if (!name || !mobile || mobile.length < 10 || !password) {
       toast({ title: "Missing fields", description: "Please fill all required fields.", variant: "destructive" });
       return;
     }
@@ -86,27 +80,23 @@ const Register = () => {
 
     setLoading(true);
     try {
+      const email = `${mobile}@cloudshelf.app`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { full_name: name, mobile },
-          emailRedirectTo: window.location.origin,
         },
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Assign role
         const appRole = role === "customer" ? "customer" : role === "owner" ? "owner" : "delivery";
         await supabase.from("user_roles").insert({ user_id: data.user.id, role: appRole as any });
-
-        // Save ward association if selected (for customer location)
-        // Ward ID can be used later for order delivery
       }
 
-      toast({ title: "Account created!", description: "Please check your email to verify your account." });
+      toast({ title: "Account created!", description: "You can now login with your mobile number." });
       navigate("/login");
     } catch (error: any) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
@@ -142,25 +132,16 @@ const Register = () => {
               <Label className="font-body font-medium">Mobile Number</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="tel" placeholder="10-digit number" value={mobile} onChange={(e) => setMobile(e.target.value)} className="pl-10" maxLength={10} />
+                <Input type="tel" placeholder="10-digit number" value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))} className="pl-10" maxLength={10} />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="font-body font-medium">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="font-body font-medium">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="password" placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" />
-              </div>
+          <div className="space-y-2">
+            <Label className="font-body font-medium">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input type="password" placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" />
             </div>
           </div>
 
