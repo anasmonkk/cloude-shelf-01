@@ -1,67 +1,118 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Phone, User } from "lucide-react";
+import { Phone, User, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
-
-// Demo data
-const states = ["Kerala"];
-const districts: Record<string, string[]> = { Kerala: ["Thrissur", "Ernakulam", "Palakkad"] };
-const panchayaths: Record<string, { name: string; area: string }[]> = {
-  Thrissur: [
-    { name: "Kuttanellur", area: "Thrissur East" },
-    { name: "Ollur", area: "Thrissur East" },
-    { name: "Nadathara", area: "Thrissur East" },
-    { name: "Koorkenchery", area: "Thrissur East" },
-    { name: "Ayyanthole", area: "Thrissur West" },
-  ],
-  Ernakulam: [
-    { name: "Kakkanad", area: "Kochi Metro" },
-    { name: "Thrikkakara", area: "Kochi Metro" },
-  ],
-  Palakkad: [
-    { name: "Palakkad Town", area: "Palakkad Central" },
-  ],
-};
-const wardCounts: Record<string, number> = {
-  Kuttanellur: 25, Ollur: 20, Nadathara: 18, Koorkenchery: 22, Ayyanthole: 19,
-  Kakkanad: 30, Thrikkakara: 28, "Palakkad Town": 35,
-};
 
 const Register = () => {
   const [searchParams] = useSearchParams();
   const defaultRole = searchParams.get("role") || "customer";
 
-  const [role, setRole] = useState(defaultRole);
+  const [role] = useState(defaultRole);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [mobile, setMobile] = useState("");
-  const [state, setState] = useState("");
-  const [district, setDistrict] = useState("");
-  const [panchayath, setPanchayath] = useState("");
-  const [ward, setWard] = useState("");
+  const [stateId, setStateId] = useState("");
+  const [districtId, setDistrictId] = useState("");
+  const [panchayathId, setPanchayathId] = useState("");
+  const [wardId, setWardId] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // DB data
+  const [states, setStates] = useState<{ id: string; name: string }[]>([]);
+  const [districts, setDistricts] = useState<{ id: string; name: string }[]>([]);
+  const [panchayaths, setPanchayaths] = useState<{ id: string; name: string }[]>([]);
+  const [wards, setWards] = useState<{ id: string; ward_number: number }[]>([]);
+  const [area, setArea] = useState("—");
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const selectedPanchayathData = state && district
-    ? panchayaths[district]?.find((p) => p.name === panchayath)
-    : null;
-  const area = selectedPanchayathData?.area || "—";
-  const maxWards = panchayath ? wardCounts[panchayath] || 0 : 0;
-  const wards = Array.from({ length: maxWards }, (_, i) => `Ward ${i + 1}`);
+  // Fetch states on mount
+  useEffect(() => {
+    supabase.from("states").select("id, name").then(({ data }) => {
+      if (data) setStates(data);
+    });
+  }, []);
 
-  const handleRegister = (e: React.FormEvent) => {
+  // Fetch districts when state changes
+  useEffect(() => {
+    if (!stateId) { setDistricts([]); return; }
+    supabase.from("districts").select("id, name").eq("state_id", stateId).then(({ data }) => {
+      if (data) setDistricts(data);
+    });
+  }, [stateId]);
+
+  // Fetch panchayaths when district changes
+  useEffect(() => {
+    if (!districtId) { setPanchayaths([]); return; }
+    supabase.from("panchayaths").select("id, name").eq("district_id", districtId).then(({ data }) => {
+      if (data) setPanchayaths(data);
+    });
+  }, [districtId]);
+
+  // Fetch wards + area when panchayath changes
+  useEffect(() => {
+    if (!panchayathId) { setWards([]); setArea("—"); return; }
+    supabase.from("wards").select("id, ward_number").eq("panchayath_id", panchayathId).order("ward_number").then(({ data }) => {
+      if (data) setWards(data);
+    });
+    // Get area name via area_panchayaths
+    supabase.from("area_panchayaths").select("areas(name)").eq("panchayath_id", panchayathId).limit(1).then(({ data }) => {
+      if (data && data.length > 0) {
+        const areaData = data[0].areas as unknown as { name: string };
+        setArea(areaData?.name || "—");
+      }
+    });
+  }, [panchayathId]);
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !mobile || mobile.length < 10) {
+    if (!name || !email || !password || !mobile || mobile.length < 10) {
       toast({ title: "Missing fields", description: "Please fill all required fields.", variant: "destructive" });
       return;
     }
-    toast({ title: "Registration successful!", description: `Welcome to Cloud Shelf as ${role}.` });
-    navigate("/login");
+    if (password.length < 6) {
+      toast({ title: "Weak password", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name, mobile },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Assign role
+        const appRole = role === "customer" ? "customer" : role === "owner" ? "owner" : "delivery";
+        await supabase.from("user_roles").insert({ user_id: data.user.id, role: appRole as any });
+
+        // Save ward association if selected (for customer location)
+        // Ward ID can be used later for order delivery
+      }
+
+      toast({ title: "Account created!", description: "Please check your email to verify your account." });
+      navigate("/login");
+    } catch (error: any) {
+      toast({ title: "Registration failed", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,18 +130,6 @@ const Register = () => {
         </div>
 
         <form onSubmit={handleRegister} className="bg-card rounded-xl border border-border p-6 shadow-elevated space-y-4">
-          <div className="space-y-2">
-            <Label className="font-body font-medium">Register as</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="owner">Owner</SelectItem>
-                <SelectItem value="delivery">Delivery Staff</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-body font-medium">Name</Label>
@@ -108,75 +147,73 @@ const Register = () => {
             </div>
           </div>
 
-          {role !== "delivery" && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-body font-medium">State</Label>
-                  <Select value={state} onValueChange={(v) => { setState(v); setDistrict(""); setPanchayath(""); setWard(""); }}>
-                    <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                    <SelectContent>
-                      {states.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-body font-medium">District</Label>
-                  <Select value={district} onValueChange={(v) => { setDistrict(v); setPanchayath(""); setWard(""); }} disabled={!state}>
-                    <SelectTrigger><SelectValue placeholder="Select district" /></SelectTrigger>
-                    <SelectContent>
-                      {(districts[state] || []).map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-body font-medium">Panchayath</Label>
-                  <Select value={panchayath} onValueChange={(v) => { setPanchayath(v); setWard(""); }} disabled={!district}>
-                    <SelectTrigger><SelectValue placeholder="Select panchayath" /></SelectTrigger>
-                    <SelectContent>
-                      {(panchayaths[district] || []).map((p) => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-body font-medium">Ward</Label>
-                  <Select value={ward} onValueChange={setWard} disabled={!panchayath}>
-                    <SelectTrigger><SelectValue placeholder="Select ward" /></SelectTrigger>
-                    <SelectContent>
-                      {wards.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="bg-secondary rounded-lg p-3">
-                <p className="text-sm font-body text-muted-foreground">
-                  <span className="font-medium text-foreground">Area:</span> {area}
-                </p>
-              </div>
-            </>
-          )}
-
-          {role === "delivery" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="font-body font-medium">Assigned Area</Label>
-              <Select>
-                <SelectTrigger><SelectValue placeholder="Select area" /></SelectTrigger>
+              <Label className="font-body font-medium">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-body font-medium">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input type="password" placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-body font-medium">State</Label>
+              <Select value={stateId} onValueChange={(v) => { setStateId(v); setDistrictId(""); setPanchayathId(""); setWardId(""); }}>
+                <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="thrissur-east">Thrissur East</SelectItem>
-                  <SelectItem value="thrissur-west">Thrissur West</SelectItem>
-                  <SelectItem value="kochi-metro">Kochi Metro</SelectItem>
-                  <SelectItem value="palakkad-central">Palakkad Central</SelectItem>
+                  {states.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-          )}
+            <div className="space-y-2">
+              <Label className="font-body font-medium">District</Label>
+              <Select value={districtId} onValueChange={(v) => { setDistrictId(v); setPanchayathId(""); setWardId(""); }} disabled={!stateId}>
+                <SelectTrigger><SelectValue placeholder="Select district" /></SelectTrigger>
+                <SelectContent>
+                  {districts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-          <Button type="submit" className="w-full font-display font-semibold">
-            Create Account
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-body font-medium">Panchayath</Label>
+              <Select value={panchayathId} onValueChange={(v) => { setPanchayathId(v); setWardId(""); }} disabled={!districtId}>
+                <SelectTrigger><SelectValue placeholder="Select panchayath" /></SelectTrigger>
+                <SelectContent>
+                  {panchayaths.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-body font-medium">Ward</Label>
+              <Select value={wardId} onValueChange={setWardId} disabled={!panchayathId}>
+                <SelectTrigger><SelectValue placeholder="Select ward" /></SelectTrigger>
+                <SelectContent>
+                  {wards.map((w) => <SelectItem key={w.id} value={w.id}>Ward {w.ward_number}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="bg-secondary rounded-lg p-3">
+            <p className="text-sm font-body text-muted-foreground">
+              <span className="font-medium text-foreground">Area:</span> {area}
+            </p>
+          </div>
+
+          <Button type="submit" className="w-full font-display font-semibold" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground font-body">
