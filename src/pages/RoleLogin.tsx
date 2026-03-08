@@ -34,6 +34,8 @@ const roleDashboards: Record<string, string> = {
 };
 
 const useEmailLogin = (role: string | undefined) => role === "superadmin";
+const useMobileOnlyLogin = (role: string | undefined) => role === "owner";
+const VENDOR_DEFAULT_PASSWORD = "cloudshelf_vendor_2024";
 
 const RoleLogin = () => {
   const { role } = useParams<{ role: string }>();
@@ -48,6 +50,7 @@ const RoleLogin = () => {
   const dashboard = roleDashboards[role || ""] || "/";
   const dbRole = roleToDbRole[role || ""];
   const isEmailLogin = useEmailLogin(role);
+  const isMobileOnly = useMobileOnlyLogin(role);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +58,11 @@ const RoleLogin = () => {
     if (isEmailLogin) {
       if (!email || !password) {
         toast({ title: "Missing credentials", description: "Please enter your email and password.", variant: "destructive" });
+        return;
+      }
+    } else if (isMobileOnly) {
+      if (!mobile || mobile.length < 10) {
+        toast({ title: "Missing credentials", description: "Please enter your 10-digit mobile number.", variant: "destructive" });
         return;
       }
     } else {
@@ -67,7 +75,8 @@ const RoleLogin = () => {
     setLoading(true);
     try {
       const loginEmail = isEmailLogin ? email : `${mobile}@cloudshelf.app`;
-      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+      const loginPassword = isMobileOnly ? VENDOR_DEFAULT_PASSWORD : password;
+      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
       if (error) throw error;
 
       const userId = data.user?.id;
@@ -147,20 +156,22 @@ const RoleLogin = () => {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label className="font-body font-medium">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                autoComplete="current-password"
-              />
+          {!isMobileOnly && (
+            <div className="space-y-2">
+              <Label className="font-body font-medium">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <Button type="submit" className="w-full font-display font-semibold" disabled={loading}>
             {loading ? "Logging in..." : `Login as ${label}`}
@@ -176,6 +187,13 @@ const RoleLogin = () => {
             <p className="text-center text-sm text-muted-foreground font-body">
               Don't have an account?{" "}
               <Link to="/register/admin" className="text-primary hover:underline font-medium">Sign Up</Link>
+            </p>
+          )}
+
+          {role === "owner" && (
+            <p className="text-center text-sm text-muted-foreground font-body">
+              Don't have an account?{" "}
+              <Link to="/register/vendor" className="text-primary hover:underline font-medium">Sign Up as Vendor</Link>
             </p>
           )}
 
