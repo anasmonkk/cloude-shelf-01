@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import RoleLogin from "./pages/RoleLogin";
 import Register from "./pages/Register";
 import AdminRegister from "./pages/AdminRegister";
+import DeliveryRegister from "./pages/DeliveryRegister";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/login/:role" element={<RoleLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/register/admin" element={<AdminRegister />} />
+          <Route path="/register/delivery" element={<DeliveryRegister />} />
           <Route path="/customer" element={<CustomerDashboard />} />
           <Route path="/customer/*" element={<CustomerDashboard />} />
           <Route path="/owner" element={<OwnerDashboard />} />
