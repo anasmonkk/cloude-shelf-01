@@ -77,7 +77,8 @@ const OwnerItems = () => {
       category_id: form.category_id,
       owner_id: session.user.id,
       image_urls: urls,
-    });
+      payment_type: form.payment_type,
+    } as any);
 
     setSubmitting(false);
     if (error) {
