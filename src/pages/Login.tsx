@@ -1,26 +1,75 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Phone } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 const Login = () => {
-  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mobile || mobile.length < 10) {
-      toast({ title: "Invalid mobile number", description: "Please enter a valid 10-digit mobile number.", variant: "destructive" });
+
+    if (!email || !password) {
+      toast({
+        title: "Missing credentials",
+        description: "Please enter your email and password.",
+        variant: "destructive",
+      });
       return;
     }
-    toast({ title: "Login successful", description: "Welcome back!" });
-    navigate("/customer");
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      const userId = data.user?.id;
+      if (!userId) throw new Error("Unable to verify user session.");
+
+      const { data: customerRole, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "customer")
+        .maybeSingle();
+
+      if (roleError) throw roleError;
+
+      if (!customerRole) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Access denied",
+          description: "This login is for customers only. Use the correct role login.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({ title: "Login successful", description: "Welcome back!" });
+      navigate("/customer");
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error?.message || "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,22 +91,37 @@ const Login = () => {
           <h2 className="font-display font-bold text-lg text-foreground text-center">Customer Login</h2>
 
           <div className="space-y-2">
-            <Label className="font-body font-medium">Mobile Number</Label>
+            <Label className="font-body font-medium">Email</Label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                type="tel"
-                placeholder="Enter 10-digit mobile number"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="pl-10"
-                maxLength={10}
+                autoComplete="email"
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full font-display font-semibold">
-            Login
+          <div className="space-y-2">
+            <Label className="font-body font-medium">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10"
+                autoComplete="current-password"
+              />
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full font-display font-semibold" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground font-body">
@@ -90,3 +154,4 @@ const Login = () => {
 };
 
 export default Login;
+
