@@ -152,7 +152,7 @@ const DashboardHome = () => {
 const pageTitles: Record<string, string> = {
   "/admin": "Admin Dashboard",
   "/admin/orders": "Orders Management",
-  "/admin/owners": "Owners Management",
+  "/admin/owners": "Vendors Management",
   "/admin/delivery": "Delivery Staff",
   "/admin/areas": "Areas",
   "/admin/payments": "Payments",

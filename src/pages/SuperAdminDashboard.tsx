@@ -99,7 +99,7 @@ const DashboardHome = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
             { label: "Admins", value: stats.admins, icon: Users },
-            { label: "Owners", value: stats.owners, icon: Package },
+            { label: "Vendors", value: stats.owners, icon: Package },
             { label: "Customers", value: stats.customers, icon: Users },
             { label: "Delivery Staff", value: stats.delivery, icon: Truck },
             { label: "Orders", value: stats.orders, icon: ShoppingCart },

@@ -13,7 +13,7 @@ import type { Database } from "@/integrations/supabase/types";
 type AppRole = Database["public"]["Enums"]["app_role"];
 
 const roleLabels: Record<string, string> = {
-  owner: "Owner",
+  owner: "Vendor",
   delivery: "Delivery Staff",
   admin: "Admin",
   superadmin: "Super Admin",

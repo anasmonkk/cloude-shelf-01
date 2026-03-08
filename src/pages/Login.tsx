@@ -121,7 +121,7 @@ const Login = () => {
           <p className="text-xs font-body text-muted-foreground text-center mb-3 uppercase tracking-wider font-medium">Other Logins</p>
           <div className="grid grid-cols-2 gap-2">
             <Link to="/login/owner">
-              <Button variant="outline" size="sm" className="w-full font-body text-xs">Owner</Button>
+              <Button variant="outline" size="sm" className="w-full font-body text-xs">Vendor</Button>
             </Link>
             <Link to="/login/delivery">
               <Button variant="outline" size="sm" className="w-full font-body text-xs">Delivery Staff</Button>

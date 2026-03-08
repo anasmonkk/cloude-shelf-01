@@ -90,7 +90,7 @@ const AdminOwners = () => {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No owners found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No vendors found</TableCell></TableRow>
               )}
               {filtered.map((o) => (
                 <TableRow key={o.id}>

@@ -74,7 +74,7 @@ const AdminItems = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Item Name</TableHead>
-                <TableHead className="hidden md:table-cell">Owner</TableHead>
+                <TableHead className="hidden md:table-cell">Vendor</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead className="hidden md:table-cell">Commission</TableHead>

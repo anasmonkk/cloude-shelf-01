@@ -5,7 +5,7 @@ const features = [
   { icon: MapPin, title: "Area-Based Discovery", desc: "Items are shown based on your Panchayath and Area for true hyperlocal rentals." },
   { icon: Package, title: "Flexible Listings", desc: "Vendors set prices, deposits, and choose pre or post payment options." },
   { icon: Users, title: "Delivery Network", desc: "Local delivery staff accept broadcast orders within their assigned area." },
-  { icon: Wallet, title: "Wallet System", desc: "Owners and delivery staff track earnings, settlements, and transactions." },
+  { icon: Wallet, title: "Wallet System", desc: "Vendors and delivery staff track earnings, settlements, and transactions." },
   { icon: CreditCard, title: "Transparent Pricing", desc: "Rental price + platform commission + delivery charge — no hidden fees." },
   { icon: BarChart3, title: "Admin Control", desc: "Full settlement, payment monitoring, and area management for admins." },
 ];
