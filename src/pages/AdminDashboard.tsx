@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { BarChart3, Users, Package, MapPin, CreditCard, Settings, ShoppingBag, Truck, Loader2 } from "lucide-react";
+import { BarChart3, Users, Package, MapPin, CreditCard, Settings, ShoppingBag, Truck, Loader2, UserCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import AdminAreas from "./admin/AdminAreas";
 import AdminPayments from "./admin/AdminPayments";
 import AdminItems from "./admin/AdminItems";
 import AdminSettlements from "./admin/AdminSettlements";
+import AdminCustomers from "./admin/AdminCustomers";
 
 const navItems = [
   { label: "Dashboard", path: "/admin", icon: <BarChart3 className="h-4 w-4" /> },
@@ -21,6 +22,7 @@ const navItems = [
   { label: "Areas", path: "/admin/areas", icon: <MapPin className="h-4 w-4" /> },
   { label: "Payments", path: "/admin/payments", icon: <CreditCard className="h-4 w-4" /> },
   { label: "Items", path: "/admin/items", icon: <Package className="h-4 w-4" /> },
+  { label: "Customers", path: "/admin/customers", icon: <UserCheck className="h-4 w-4" /> },
   { label: "Settlements", path: "/admin/settlements", icon: <Settings className="h-4 w-4" /> },
 ];
 
@@ -157,6 +159,7 @@ const pageTitles: Record<string, string> = {
   "/admin/areas": "Areas",
   "/admin/payments": "Payments",
   "/admin/items": "Items Management",
+  "/admin/customers": "Customers",
   "/admin/settlements": "Settlements",
 };
 
@@ -215,6 +218,7 @@ const AdminDashboard = () => {
       case "/admin/areas": return <AdminAreas />;
       case "/admin/payments": return <AdminPayments />;
       case "/admin/items": return <AdminItems />;
+      case "/admin/customers": return <AdminCustomers />;
       case "/admin/settlements": return <AdminSettlements />;
       default: return <DashboardHome />;
     }
