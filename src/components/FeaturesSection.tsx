@@ -3,7 +3,7 @@ import { MapPin, Wallet, Users, BarChart3, Package, CreditCard } from "lucide-re
 
 const features = [
   { icon: MapPin, title: "Area-Based Discovery", desc: "Items are shown based on your Panchayath and Area for true hyperlocal rentals." },
-  { icon: Package, title: "Flexible Listings", desc: "Owners set prices, deposits, and choose pre or post payment options." },
+  { icon: Package, title: "Flexible Listings", desc: "Vendors set prices, deposits, and choose pre or post payment options." },
   { icon: Users, title: "Delivery Network", desc: "Local delivery staff accept broadcast orders within their assigned area." },
   { icon: Wallet, title: "Wallet System", desc: "Owners and delivery staff track earnings, settlements, and transactions." },
   { icon: CreditCard, title: "Transparent Pricing", desc: "Rental price + platform commission + delivery charge — no hidden fees." },
