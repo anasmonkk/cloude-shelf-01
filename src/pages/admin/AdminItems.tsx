@@ -34,10 +34,21 @@ const AdminItems = () => {
   const fetchItems = async () => {
     const { data } = await supabase
       .from("items")
-      .select("id, name, owner_price, status, category_id, owner_id, categories(name, commission_rate), profiles:owner_id(full_name)")
+      .select("id, name, owner_price, status, category_id, owner_id, categories(name, commission_rate)")
       .order("created_at", { ascending: false });
 
-    setItems(data || []);
+    // Fetch vendor names separately since there's no FK from items to profiles
+    const ownerIds = [...new Set((data || []).map(i => i.owner_id))];
+    let profileMap: Record<string, string> = {};
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", ownerIds);
+      profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name]));
+    }
+
+    setItems((data || []).map(item => ({ ...item, vendor_name: profileMap[item.owner_id] || "—" })));
     setLoading(false);
   };
 
