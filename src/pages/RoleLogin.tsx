@@ -50,6 +50,7 @@ const RoleLogin = () => {
   const dashboard = roleDashboards[role || ""] || "/";
   const dbRole = roleToDbRole[role || ""];
   const isEmailLogin = useEmailLogin(role);
+  const isMobileOnly = useMobileOnlyLogin(role);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
