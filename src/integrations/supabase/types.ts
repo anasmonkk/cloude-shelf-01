@@ -424,30 +424,54 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           date_of_birth: string | null
+          delivery_address: string | null
           full_name: string
           id: string
           mobile: string
+          panchayath_id: string | null
           updated_at: string
+          ward_id: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
+          delivery_address?: string | null
           full_name: string
           id: string
           mobile: string
+          panchayath_id?: string | null
           updated_at?: string
+          ward_id?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
+          delivery_address?: string | null
           full_name?: string
           id?: string
           mobile?: string
+          panchayath_id?: string | null
           updated_at?: string
+          ward_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_panchayath_id_fkey"
+            columns: ["panchayath_id"]
+            isOneToOne: false
+            referencedRelation: "panchayaths"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_ward_id_fkey"
+            columns: ["ward_id"]
+            isOneToOne: false
+            referencedRelation: "wards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settlements: {
         Row: {
