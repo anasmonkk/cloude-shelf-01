@@ -190,6 +190,13 @@ const RoleLogin = () => {
             </p>
           )}
 
+          {role === "owner" && (
+            <p className="text-center text-sm text-muted-foreground font-body">
+              Don't have an account?{" "}
+              <Link to="/register/vendor" className="text-primary hover:underline font-medium">Sign Up as Vendor</Link>
+            </p>
+          )}
+
           <p className="text-center text-sm text-muted-foreground font-body">
             <Link to="/login" className="text-primary hover:underline font-medium">← Back to Customer Login</Link>
           </p>
