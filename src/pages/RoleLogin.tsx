@@ -75,7 +75,8 @@ const RoleLogin = () => {
     setLoading(true);
     try {
       const loginEmail = isEmailLogin ? email : `${mobile}@cloudshelf.app`;
-      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+      const loginPassword = isMobileOnly ? VENDOR_DEFAULT_PASSWORD : password;
+      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
       if (error) throw error;
 
       const userId = data.user?.id;
