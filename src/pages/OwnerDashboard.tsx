@@ -20,7 +20,7 @@ const stats = [
 
 const OwnerDashboard = () => {
   return (
-    <DashboardLayout navItems={navItems} title="Owner Dashboard" role="Owner">
+    <DashboardLayout navItems={navItems} title="Vendor Dashboard" role="Vendor">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {stats.map((s) => (
           <Card key={s.label} className="shadow-card">

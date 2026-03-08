@@ -64,7 +64,7 @@ const AdminItems = () => {
     <div className="space-y-4">
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search items or owners..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        <Input placeholder="Search items or vendors..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
       <Card className="shadow-card">
@@ -74,7 +74,7 @@ const AdminItems = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Item Name</TableHead>
-                <TableHead className="hidden md:table-cell">Owner</TableHead>
+                <TableHead className="hidden md:table-cell">Vendor</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead className="hidden md:table-cell">Commission</TableHead>

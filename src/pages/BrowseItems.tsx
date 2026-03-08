@@ -5,12 +5,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const demoItems = [
-  { id: 1, name: "Wedding Saree - Kasavu", owner: "Priya's Collection", price: 500, commission: 75, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
-  { id: 2, name: "Power Drill Machine", owner: "Rajan Tools", price: 200, commission: 20, delivery: 80, status: "available", returnIn: "", images: 4, category: "Electronics" },
-  { id: 3, name: "Gold Necklace Set", owner: "Lakshmi Jewels", price: 1500, commission: 300, delivery: 80, status: "rented", returnIn: "4 Hours", images: 3, category: "Ornaments" },
-  { id: 4, name: "DJ Speaker System", owner: "Sound Wave Rentals", price: 800, commission: 80, delivery: 80, status: "available", returnIn: "", images: 5, category: "Electronics" },
-  { id: 5, name: "Bridal Lehenga", owner: "Meera Fashion", price: 1200, commission: 180, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
-  { id: 6, name: "DSLR Camera Kit", owner: "Lens Hub", price: 600, commission: 60, delivery: 80, status: "rented", returnIn: "2 Hours", images: 4, category: "Electronics" },
+  { id: 1, name: "Wedding Saree - Kasavu", vendor: "Priya's Collection", price: 500, commission: 75, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
+  { id: 2, name: "Power Drill Machine", vendor: "Rajan Tools", price: 200, commission: 20, delivery: 80, status: "available", returnIn: "", images: 4, category: "Electronics" },
+  { id: 3, name: "Gold Necklace Set", vendor: "Lakshmi Jewels", price: 1500, commission: 300, delivery: 80, status: "rented", returnIn: "4 Hours", images: 3, category: "Ornaments" },
+  { id: 4, name: "DJ Speaker System", vendor: "Sound Wave Rentals", price: 800, commission: 80, delivery: 80, status: "available", returnIn: "", images: 5, category: "Electronics" },
+  { id: 5, name: "Bridal Lehenga", vendor: "Meera Fashion", price: 1200, commission: 180, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
+  { id: 6, name: "DSLR Camera Kit", vendor: "Lens Hub", price: 600, commission: 60, delivery: 80, status: "rented", returnIn: "2 Hours", images: 4, category: "Electronics" },
 ];
 
 const categories = ["All", "Dress", "Electronics", "Ornaments"];
@@ -23,7 +23,7 @@ const BrowseItems = () => {
         <div className="container">
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">Browse Items</h1>
-            <p className="text-muted-foreground font-body">Rent items from owners in your area</p>
+            <p className="text-muted-foreground font-body">Rent items from vendors in your area</p>
           </div>
 
           {/* Search & Filters */}
@@ -73,7 +73,7 @@ const BrowseItems = () => {
                 <div className="p-4 space-y-3">
                   <div>
                     <h3 className="font-display font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{item.name}</h3>
-                    <p className="text-xs text-muted-foreground font-body">{item.owner}</p>
+                    <p className="text-xs text-muted-foreground font-body">{item.vendor}</p>
                   </div>
                   <div className="space-y-1 text-xs font-body">
                     <div className="flex justify-between">

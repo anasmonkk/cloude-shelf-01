@@ -72,11 +72,11 @@ const AdminOwners = () => {
     <div className="space-y-4">
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search owners..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        <Input placeholder="Search vendors..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="font-display text-lg">Registered Owners ({filtered.length})</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="font-display text-lg">Registered Vendors ({filtered.length})</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -90,7 +90,7 @@ const AdminOwners = () => {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No owners found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No vendors found</TableCell></TableRow>
               )}
               {filtered.map((o) => (
                 <TableRow key={o.id}>
