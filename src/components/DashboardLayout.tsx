@@ -1,8 +1,9 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { CloudIcon, Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.jpeg";
 
 interface NavItem {
   label: string;
@@ -30,8 +31,7 @@ const DashboardLayout = ({ children, navItems, title, role }: DashboardLayoutPro
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center gap-2 p-4 border-b border-sidebar-border">
-          <CloudIcon className="h-6 w-6 text-sidebar-primary" />
-          <span className="font-display text-lg font-bold text-sidebar-foreground">Cloud Shelf</span>
+          <img src={logo} alt="Cloud Shelf" className="h-8 w-auto" />
         </div>
 
         <div className="p-3">

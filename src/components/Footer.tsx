@@ -1,5 +1,5 @@
-import { CloudIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "@/assets/logo.jpeg";
 
 const Footer = () => {
   return (
@@ -7,8 +7,7 @@ const Footer = () => {
       <div className="container">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <CloudIcon className="h-6 w-6 text-primary" />
-            <span className="font-display text-lg font-bold text-background">Cloud Shelf</span>
+            <img src={logo} alt="Cloud Shelf" className="h-10 w-auto rounded" />
           </div>
           <p className="text-sm text-muted-foreground font-body">
             © 2026 Cloud Shelf. Hyperlocal rental marketplace.

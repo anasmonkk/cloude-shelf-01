@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, MapPin, Shield, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import logo from "@/assets/logo.jpeg";
 
 const HeroSection = () => {
   return (
@@ -18,6 +19,7 @@ const HeroSection = () => {
           transition={{ duration: 0.7 }}
           className="max-w-2xl"
         >
+          <img src={logo} alt="Cloud Shelf" className="h-20 md:h-28 w-auto mb-6 drop-shadow-lg" />
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary-foreground/20 text-primary-foreground text-sm font-body font-medium mb-6">
             Hyperlocal Rental Platform
           </span>

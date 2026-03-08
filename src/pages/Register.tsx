@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CloudIcon, Phone, User } from "lucide-react";
+import { Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.jpeg";
 
 // Demo data
 const states = ["Kerala"];
@@ -71,9 +72,8 @@ const Register = () => {
         className="w-full max-w-lg"
       >
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <CloudIcon className="h-8 w-8 text-primary" />
-            <span className="font-display text-2xl font-bold text-foreground">Cloud Shelf</span>
+          <Link to="/" className="inline-block mb-4">
+            <img src={logo} alt="Cloud Shelf" className="h-16 w-auto mx-auto" />
           </Link>
           <p className="text-muted-foreground font-body">Create your account</p>
         </div>
