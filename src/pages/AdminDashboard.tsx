@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { BarChart3, Users, Package, MapPin, CreditCard, Settings, ShoppingBag, Truck, Loader2 } from "lucide-react";
+import { BarChart3, Users, Package, MapPin, CreditCard, Settings, ShoppingBag, Truck, Loader2, UserCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
