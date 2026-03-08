@@ -139,6 +139,16 @@ const OwnerItems = () => {
                 <Input type="number" value={form.owner_price} onChange={e => setForm(f => ({ ...f, owner_price: e.target.value }))} />
               </div>
               <div>
+                <Label>Payment Type *</Label>
+                <Select value={form.payment_type} onValueChange={v => setForm(f => ({ ...f, payment_type: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select payment type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash_on_delivery">Cash on Delivery</SelectItem>
+                    <SelectItem value="prepaid">Prepaid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>Image URL 1 *</Label>
                 <Input value={form.image_url_1} onChange={e => setForm(f => ({ ...f, image_url_1: e.target.value }))} />
               </div>
