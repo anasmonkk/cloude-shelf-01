@@ -10,12 +10,23 @@ import { useToast } from "@/hooks/use-toast";
 
 const BrowseItems = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [items, setItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deliveryCharge, setDeliveryCharge] = useState(50);
+
+  const handleViewItem = async (itemId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: "Login required", description: "Please log in to view item details.", variant: "destructive" });
+      navigate("/login");
+      return;
+    }
+    navigate(`/item/${itemId}`);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
