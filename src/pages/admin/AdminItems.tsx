@@ -40,7 +40,7 @@ const AdminItems = () => {
       .order("created_at", { ascending: false });
 
     const ownerIds = [...new Set((data || []).map(i => i.owner_id))];
-    let profileMap: Record<string, string> = {};
+    let profileMap: Record<string, { name: string; mobile: string }> = {};
     if (ownerIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
