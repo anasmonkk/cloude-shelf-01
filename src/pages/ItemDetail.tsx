@@ -36,7 +36,7 @@ const ItemDetail = () => {
       const [itemRes, delRes] = await Promise.all([
         supabase
           .from("items")
-          .select("id, name, description, owner_price, status, image_urls, owner_id, category_id, categories(name, commission_rate)")
+          .select("id, name, description, owner_price, status, image_urls, owner_id, category_id, payment_type, categories(name, commission_rate)")
           .eq("id", id!)
           .single(),
         supabase.from("delivery_config").select("fixed_charge").limit(1).single(),
