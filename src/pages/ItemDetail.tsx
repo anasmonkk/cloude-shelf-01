@@ -296,18 +296,8 @@ const ItemDetail = () => {
               </div>
             )}
 
-            <div>
-              <Label className="font-body">Payment Method</Label>
-              <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)} className="mt-2 space-y-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cash_on_delivery" id="cod" />
-                  <Label htmlFor="cod" className="font-body font-normal cursor-pointer">Cash on Delivery</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="prepaid" id="prepaid" />
-                  <Label htmlFor="prepaid" className="font-body font-normal cursor-pointer">Prepaid</Label>
-                </div>
-              </RadioGroup>
+            <div className="bg-muted/50 rounded-lg p-3 text-sm font-body">
+              <div className="flex justify-between mb-1"><span className="text-muted-foreground">Payment</span><span className="font-medium text-foreground">{item?.payment_type === "prepaid" ? "Prepaid" : "Cash on Delivery"}</span></div>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-3 text-sm font-body">
