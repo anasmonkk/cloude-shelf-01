@@ -38,7 +38,7 @@ const DashboardLayout = ({ children, navItems, title, role }: DashboardLayoutPro
           <span className="text-xs font-body font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3">{role}</span>
         </div>
 
-        <nav className="px-3 space-y-1">
+        <nav className="px-3 space-y-1 flex-1 overflow-y-auto">
           {navItems.map((item) => (
             <Link
               key={item.path}
