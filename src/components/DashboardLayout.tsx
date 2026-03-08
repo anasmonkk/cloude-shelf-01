@@ -27,7 +27,7 @@ const DashboardLayout = ({ children, navItems, title, role }: DashboardLayoutPro
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform lg:translate-x-0 lg:static",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform lg:translate-x-0 lg:static flex flex-col",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center gap-2 p-4 border-b border-sidebar-border">
@@ -38,7 +38,7 @@ const DashboardLayout = ({ children, navItems, title, role }: DashboardLayoutPro
           <span className="text-xs font-body font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3">{role}</span>
         </div>
 
-        <nav className="px-3 space-y-1">
+        <nav className="px-3 space-y-1 flex-1 overflow-y-auto">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -57,7 +57,7 @@ const DashboardLayout = ({ children, navItems, title, role }: DashboardLayoutPro
           ))}
         </nav>
 
-        <div className="absolute bottom-4 left-3 right-3">
+        <div className="p-3 border-t border-sidebar-border mt-auto">
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/50 hover:text-sidebar-foreground"
