@@ -124,7 +124,7 @@ const BrowseItems = () => {
                 const imageUrl = item.image_urls?.[0];
 
                 return (
-                  <div key={item.id} className="bg-card rounded-xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-all group cursor-pointer" onClick={() => navigate(`/item/${item.id}`)}>
+                  <div key={item.id} className="bg-card rounded-xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-all group cursor-pointer" onClick={() => handleViewItem(item.id)}>
                     <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
                       {imageUrl ? (
                         <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
