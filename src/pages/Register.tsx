@@ -66,19 +66,15 @@ const Register = () => {
     setLoading(true);
     try {
       const email = `${mobile}@cloudshelf.app`;
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password: CUSTOMER_DEFAULT_PASSWORD,
         options: {
-          data: { full_name: name, mobile },
+          data: { full_name: name, mobile, role: "customer" },
         },
       });
 
       if (error) throw error;
-
-      if (data.user) {
-        await supabase.from("user_roles").insert({ user_id: data.user.id, role: "customer" as any });
-      }
 
       toast({ title: "Account created!", description: "You can now login with your mobile number." });
       navigate("/login");
