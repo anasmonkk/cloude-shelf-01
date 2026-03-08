@@ -53,7 +53,17 @@ const DashboardHome = () => {
         });
 
         setRecentOrders(recentOrdersRes.data || []);
-        setPendingSettlements(settlementsRes.data || []);
+
+        // Fetch profile names for settlements
+        const settlements = settlementsRes.data || [];
+        if (settlements.length > 0) {
+          const userIds = [...new Set(settlements.map(s => s.user_id))];
+          const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+          const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name]));
+          setPendingSettlements(settlements.map(s => ({ ...s, profile_name: profileMap[s.user_id] || "Unknown" })));
+        } else {
+          setPendingSettlements([]);
+        }
       } catch (err) {
         console.error("Dashboard fetch error:", err);
       } finally {
