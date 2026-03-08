@@ -49,9 +49,8 @@ const Login = () => {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <CloudIcon className="h-8 w-8 text-primary" />
-            <span className="font-display text-2xl font-bold text-foreground">Cloud Shelf</span>
+          <Link to="/" className="inline-block mb-4">
+            <img src={logo} alt="Cloud Shelf" className="h-16 w-auto mx-auto" />
           </Link>
           <p className="text-muted-foreground font-body">Login with your mobile number</p>
         </div>

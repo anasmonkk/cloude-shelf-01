@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, CloudIcon } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import logo from "@/assets/logo.jpeg";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -11,8 +12,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2">
-          <CloudIcon className="h-7 w-7 text-primary" />
-          <span className="font-display text-xl font-bold text-foreground">Cloud Shelf</span>
+          <img src={logo} alt="Cloud Shelf" className="h-9 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
