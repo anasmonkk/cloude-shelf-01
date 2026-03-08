@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,28 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 
-const Login = () => {
+const roleLabels: Record<string, string> = {
+  owner: "Owner",
+  delivery: "Delivery Staff",
+  admin: "Admin",
+  superadmin: "Super Admin",
+};
+
+const roleDashboards: Record<string, string> = {
+  owner: "/owner",
+  delivery: "/delivery",
+  admin: "/admin",
+  superadmin: "/superadmin",
+};
+
+const RoleLogin = () => {
+  const { role } = useParams<{ role: string }>();
   const [mobile, setMobile] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const label = roleLabels[role || ""] || "User";
+  const dashboard = roleDashboards[role || ""] || "/";
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,8 +37,8 @@ const Login = () => {
       toast({ title: "Invalid mobile number", description: "Please enter a valid 10-digit mobile number.", variant: "destructive" });
       return;
     }
-    toast({ title: "Login successful", description: "Welcome back!" });
-    navigate("/customer");
+    toast({ title: "Login successful", description: `Welcome back, ${label}!` });
+    navigate(dashboard);
   };
 
   return (
@@ -34,12 +52,10 @@ const Login = () => {
           <Link to="/" className="inline-block mb-4">
             <img src={logo} alt="Cloud Shelf" className="h-16 w-auto mx-auto" />
           </Link>
-          <p className="text-muted-foreground font-body">Login to rent items near you</p>
         </div>
 
-        {/* Customer Login Form */}
         <form onSubmit={handleLogin} className="bg-card rounded-xl border border-border p-6 shadow-elevated space-y-5">
-          <h2 className="font-display font-bold text-lg text-foreground text-center">Customer Login</h2>
+          <h2 className="font-display font-bold text-lg text-foreground text-center">{label} Login</h2>
 
           <div className="space-y-2">
             <Label className="font-body font-medium">Mobile Number</Label>
@@ -57,36 +73,16 @@ const Login = () => {
           </div>
 
           <Button type="submit" className="w-full font-display font-semibold">
-            Login
+            Login as {label}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground font-body">
-            New customer?{" "}
-            <Link to="/register" className="text-primary hover:underline font-medium">Sign Up</Link>
+            <Link to="/login" className="text-primary hover:underline font-medium">← Back to Customer Login</Link>
           </p>
         </form>
-
-        {/* Other Role Links */}
-        <div className="mt-6 bg-card rounded-xl border border-border p-5 shadow-card">
-          <p className="text-xs font-body text-muted-foreground text-center mb-3 uppercase tracking-wider font-medium">Other Logins</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Link to="/login/owner">
-              <Button variant="outline" size="sm" className="w-full font-body text-xs">Owner</Button>
-            </Link>
-            <Link to="/login/delivery">
-              <Button variant="outline" size="sm" className="w-full font-body text-xs">Delivery Staff</Button>
-            </Link>
-            <Link to="/login/admin">
-              <Button variant="outline" size="sm" className="w-full font-body text-xs">Admin</Button>
-            </Link>
-            <Link to="/login/superadmin">
-              <Button variant="outline" size="sm" className="w-full font-body text-xs">Super Admin</Button>
-            </Link>
-          </div>
-        </div>
       </motion.div>
     </div>
   );
 };
 
-export default Login;
+export default RoleLogin;

@@ -7,6 +7,7 @@ import SplashScreen from "./pages/SplashScreen";
 import Index from "./pages/Index";
 import BrowseItems from "./pages/BrowseItems";
 import Login from "./pages/Login";
+import RoleLogin from "./pages/RoleLogin";
 import Register from "./pages/Register";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/home" element={<Index />} />
           <Route path="/browse" element={<BrowseItems />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/login/:role" element={<RoleLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/customer" element={<CustomerDashboard />} />
           <Route path="/customer/*" element={<CustomerDashboard />} />
