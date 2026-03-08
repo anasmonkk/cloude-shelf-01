@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, Filter, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Eye, Filter, Loader2, CheckCircle, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -31,19 +33,40 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, order_number, status, total_amount, created_at, customer_id, owner_id, item_id, items(name), profiles:customer_id(full_name)")
-        .order("created_at", { ascending: false });
+  const fetchOrders = async () => {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("id, order_number, status, total_amount, payment_method, delivery_charge, commission_amount, owner_price, delivery_address, created_at, customer_id, owner_id, item_id, ward_id, items(name), profiles:customer_id(full_name)")
+      .order("created_at", { ascending: false });
 
-      if (!error && data) setOrders(data);
-      setLoading(false);
-    };
-    fetchOrders();
-  }, []);
+    if (!error && data) {
+      // Fetch owner names
+      const ownerIds = [...new Set(data.map(o => o.owner_id))];
+      let ownerMap: Record<string, string> = {};
+      if (ownerIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", ownerIds);
+        ownerMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name]));
+      }
+      setOrders(data.map(o => ({ ...o, owner_name: ownerMap[o.owner_id] || "—" })));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchOrders(); }, []);
+
+  const verifyPayment = async (orderId: string) => {
+    const { error } = await supabase.from("orders").update({ status: "confirmed" as any }).eq("id", orderId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Payment verified", description: "Order confirmed and available for delivery staff." });
+      fetchOrders();
+      if (selectedOrder?.id === orderId) setSelectedOrder(null);
+    }
+  };
 
   const filtered = orders.filter(o => {
     const matchSearch = o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
@@ -89,13 +112,14 @@ const AdminOrders = () => {
                 <TableHead>Customer</TableHead>
                 <TableHead className="hidden md:table-cell">Item</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead className="hidden md:table-cell">Payment</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No orders found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No orders found</TableCell></TableRow>
               )}
               {filtered.map((o) => (
                 <TableRow key={o.id}>
@@ -103,14 +127,82 @@ const AdminOrders = () => {
                   <TableCell className="font-body">{(o.profiles as any)?.full_name || "—"}</TableCell>
                   <TableCell className="hidden md:table-cell font-body text-muted-foreground">{(o.items as any)?.name || "—"}</TableCell>
                   <TableCell className="font-display font-semibold">₹{Number(o.total_amount).toLocaleString("en-IN")}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant={o.payment_method === "prepaid" ? "default" : "secondary"}>
+                      {o.payment_method === "prepaid" ? "Prepaid" : "COD"}
+                    </Badge>
+                  </TableCell>
                   <TableCell><Badge className={statusColors[o.status] || ""}>{statusLabel(o.status)}</Badge></TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{new Date(o.created_at).toLocaleDateString("en-IN")}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedOrder(o)}>
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                      {o.payment_method === "prepaid" && o.status === "pending" && (
+                        <Button size="sm" variant="ghost" onClick={() => verifyPayment(o.id)}>
+                          <CheckCircle className="h-4 w-4 text-emerald-600" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Order Detail Dialog */}
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {selectedOrder && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display">{selectedOrder.order_number}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge className={statusColors[selectedOrder.status]}>{statusLabel(selectedOrder.status)}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><span className="text-muted-foreground">Customer:</span><p className="font-medium text-foreground">{(selectedOrder.profiles as any)?.full_name || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Vendor:</span><p className="font-medium text-foreground">{selectedOrder.owner_name}</p></div>
+                </div>
+                <div><span className="text-muted-foreground">Item:</span><p className="font-medium text-foreground">{(selectedOrder.items as any)?.name || "—"}</p></div>
+                <div><span className="text-muted-foreground">Delivery Address:</span><p className="font-medium text-foreground">{selectedOrder.delivery_address || "—"}</p></div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-1">
+                    <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Payment:</span>
+                    <Badge variant={selectedOrder.payment_method === "prepaid" ? "default" : "secondary"}>
+                      {selectedOrder.payment_method === "prepaid" ? "Prepaid" : "COD"}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Rental Price</span><span className="font-semibold text-foreground">₹{Number(selectedOrder.owner_price).toLocaleString("en-IN")}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Commission</span><span className="font-semibold text-accent">₹{Number(selectedOrder.commission_amount).toLocaleString("en-IN")}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Delivery</span><span className="font-semibold text-foreground">₹{Number(selectedOrder.delivery_charge).toLocaleString("en-IN")}</span></div>
+                  <div className="flex justify-between border-t border-border pt-1"><span className="font-semibold text-foreground">Total</span><span className="font-bold text-primary">₹{Number(selectedOrder.total_amount).toLocaleString("en-IN")}</span></div>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Placed on {new Date(selectedOrder.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+
+                {selectedOrder.payment_method === "prepaid" && selectedOrder.status === "pending" && (
+                  <Button className="w-full" onClick={() => verifyPayment(selectedOrder.id)}>
+                    <CheckCircle className="h-4 w-4 mr-1" /> Verify Payment & Confirm
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
