@@ -16,7 +16,7 @@ import AdminSettlements from "./admin/AdminSettlements";
 const navItems = [
   { label: "Dashboard", path: "/admin", icon: <BarChart3 className="h-4 w-4" /> },
   { label: "Orders", path: "/admin/orders", icon: <ShoppingBag className="h-4 w-4" /> },
-  { label: "Owners", path: "/admin/owners", icon: <Users className="h-4 w-4" /> },
+  { label: "Vendors", path: "/admin/owners", icon: <Users className="h-4 w-4" /> },
   { label: "Delivery Staff", path: "/admin/delivery", icon: <Truck className="h-4 w-4" /> },
   { label: "Areas", path: "/admin/areas", icon: <MapPin className="h-4 w-4" /> },
   { label: "Payments", path: "/admin/payments", icon: <CreditCard className="h-4 w-4" /> },
