@@ -108,12 +108,11 @@ const BrowseItems = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filtered.map((item) => {
-                const commission = item.categories ? (Number(item.owner_price) * Number(item.categories.commission_rate) / 100) : 0;
-                const total = Number(item.owner_price) + commission + deliveryCharge;
+                const total = Number(item.owner_price) + deliveryCharge;
                 const imageUrl = item.image_urls?.[0];
 
                 return (
-                  <div key={item.id} className="bg-card rounded-xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-all group">
+                  <div key={item.id} className="bg-card rounded-xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-all group cursor-pointer" onClick={() => navigate(`/item/${item.id}`)}>
                     <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
                       {imageUrl ? (
                         <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
@@ -135,10 +134,6 @@ const BrowseItems = () => {
                           <span className="text-foreground font-medium">₹{Number(item.owner_price).toLocaleString("en-IN")}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Commission</span>
-                          <span className="text-foreground">₹{commission.toLocaleString("en-IN")}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Delivery</span>
                           <span className="text-foreground">₹{deliveryCharge}</span>
                         </div>
@@ -147,8 +142,8 @@ const BrowseItems = () => {
                           <span className="font-semibold text-primary">₹{total.toLocaleString("en-IN")}</span>
                         </div>
                       </div>
-                      <Button size="sm" className="w-full font-display text-xs">
-                        Rent Now
+                      <Button size="sm" className="w-full font-display text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/item/${item.id}`); }}>
+                        View Details
                       </Button>
                     </div>
                   </div>

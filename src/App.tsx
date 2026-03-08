@@ -7,6 +7,7 @@ import SplashScreen from "./pages/SplashScreen";
 import VendorRegister from "./pages/VendorRegister";
 import Index from "./pages/Index";
 import BrowseItems from "./pages/BrowseItems";
+import ItemDetail from "./pages/ItemDetail";
 import Login from "./pages/Login";
 import RoleLogin from "./pages/RoleLogin";
 import Register from "./pages/Register";
