@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Phone, Lock } from "lucide-react";
+import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
+const CUSTOMER_DEFAULT_PASSWORD = "cloudshelf_customer_2024";
+
 const Login = () => {
   const [mobile, setMobile] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -19,10 +20,10 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!mobile || mobile.length < 10 || !password) {
+    if (!mobile || mobile.length < 10) {
       toast({
-        title: "Missing credentials",
-        description: "Please enter your mobile number and password.",
+        title: "Invalid mobile number",
+        description: "Please enter a valid 10-digit mobile number.",
         variant: "destructive",
       });
       return;
@@ -33,7 +34,7 @@ const Login = () => {
       const email = `${mobile}@cloudshelf.app`;
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password: CUSTOMER_DEFAULT_PASSWORD,
       });
 
       if (error) throw error;
@@ -65,7 +66,7 @@ const Login = () => {
     } catch (error: any) {
       toast({
         title: "Login failed",
-        description: error?.message || "Please check your credentials and try again.",
+        description: error?.message || "Mobile number not registered. Please sign up first.",
         variant: "destructive",
       });
     } finally {
@@ -101,21 +102,6 @@ const Login = () => {
                 onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
                 className="pl-10"
                 maxLength={10}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="font-body font-medium">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                autoComplete="current-password"
               />
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Phone, User, Lock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,13 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
-const Register = () => {
-  const [searchParams] = useSearchParams();
-  const defaultRole = searchParams.get("role") || "customer";
+const CUSTOMER_DEFAULT_PASSWORD = "cloudshelf_customer_2024";
 
-  const [role] = useState(defaultRole);
+const Register = () => {
   const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
   const [mobile, setMobile] = useState("");
   const [stateId, setStateId] = useState("");
   const [districtId, setDistrictId] = useState("");
@@ -24,12 +21,10 @@ const Register = () => {
   const [wardId, setWardId] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // DB data
   const [states, setStates] = useState<{ id: string; name: string }[]>([]);
   const [districts, setDistricts] = useState<{ id: string; name: string }[]>([]);
   const [panchayaths, setPanchayaths] = useState<{ id: string; name: string }[]>([]);
   const [wards, setWards] = useState<{ id: string; ward_number: number }[]>([]);
-  const [area, setArea] = useState("—");
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -55,26 +50,16 @@ const Register = () => {
   }, [districtId]);
 
   useEffect(() => {
-    if (!panchayathId) { setWards([]); setArea("—"); return; }
+    if (!panchayathId) { setWards([]); return; }
     supabase.from("wards").select("id, ward_number").eq("panchayath_id", panchayathId).order("ward_number").then(({ data }) => {
       if (data) setWards(data);
-    });
-    supabase.from("area_panchayaths").select("areas(name)").eq("panchayath_id", panchayathId).limit(1).then(({ data }) => {
-      if (data && data.length > 0) {
-        const areaData = data[0].areas as unknown as { name: string };
-        setArea(areaData?.name || "—");
-      }
     });
   }, [panchayathId]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !mobile || mobile.length < 10 || !password) {
+    if (!name || !mobile || mobile.length < 10 || !panchayathId || !wardId) {
       toast({ title: "Missing fields", description: "Please fill all required fields.", variant: "destructive" });
-      return;
-    }
-    if (password.length < 6) {
-      toast({ title: "Weak password", description: "Password must be at least 6 characters.", variant: "destructive" });
       return;
     }
 
@@ -83,7 +68,7 @@ const Register = () => {
       const email = `${mobile}@cloudshelf.app`;
       const { data, error } = await supabase.auth.signUp({
         email,
-        password,
+        password: CUSTOMER_DEFAULT_PASSWORD,
         options: {
           data: { full_name: name, mobile },
         },
@@ -92,8 +77,7 @@ const Register = () => {
       if (error) throw error;
 
       if (data.user) {
-        const appRole = role === "customer" ? "customer" : role === "owner" ? "owner" : "delivery";
-        await supabase.from("user_roles").insert({ user_id: data.user.id, role: appRole as any });
+        await supabase.from("user_roles").insert({ user_id: data.user.id, role: "customer" as any });
       }
 
       toast({ title: "Account created!", description: "You can now login with your mobile number." });
@@ -116,10 +100,12 @@ const Register = () => {
           <Link to="/" className="inline-block mb-4">
             <img src={logo} alt="Cloud Shelf" className="h-16 w-auto mx-auto" />
           </Link>
-          <p className="text-muted-foreground font-body">Create your account</p>
+          <p className="text-muted-foreground font-body">Create your customer account</p>
         </div>
 
         <form onSubmit={handleRegister} className="bg-card rounded-xl border border-border p-6 shadow-elevated space-y-4">
+          <h2 className="font-display font-bold text-lg text-foreground text-center">Customer Sign Up</h2>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-body font-medium">Name</Label>
@@ -134,14 +120,6 @@ const Register = () => {
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input type="tel" placeholder="10-digit number" value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))} className="pl-10" maxLength={10} />
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="font-body font-medium">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="password" placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" />
             </div>
           </div>
 
@@ -187,14 +165,8 @@ const Register = () => {
             </div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-3">
-            <p className="text-sm font-body text-muted-foreground">
-              <span className="font-medium text-foreground">Area:</span> {area}
-            </p>
-          </div>
-
           <Button type="submit" className="w-full font-display font-semibold" disabled={loading}>
-            {loading ? "Creating Account..." : "Create Account"}
+            {loading ? "Creating Account..." : "Sign Up"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground font-body">
