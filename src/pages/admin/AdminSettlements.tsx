@@ -1,120 +1,88 @@
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const ownerSettlements = [
-  { id: "SET-045", name: "Priya's Collection", amount: "₹4,500", orders: 8, status: "Pending" },
-  { id: "SET-044", name: "Rajan Tools", amount: "₹1,200", orders: 3, status: "Pending" },
-  { id: "SET-043", name: "Kumar Electronics", amount: "₹2,800", orders: 5, status: "Settled" },
-  { id: "SET-042", name: "Meena Jewellers", amount: "₹3,600", orders: 6, status: "Settled" },
-];
-
-const deliverySettlements = [
-  { id: "DSET-022", name: "Arun V", amount: "₹640", trips: 12, status: "Pending" },
-  { id: "DSET-021", name: "Biju K", amount: "₹480", trips: 9, status: "Pending" },
-  { id: "DSET-020", name: "Deepak M", amount: "₹720", trips: 14, status: "Settled" },
-];
-
 const AdminSettlements = () => {
+  const [settlements, setSettlements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const handleSettle = (id: string) => {
-    toast({ title: "Settlement processed", description: `${id} has been marked as settled.` });
+  const fetchSettlements = async () => {
+    const { data } = await supabase
+      .from("settlements")
+      .select("id, amount, status, created_at, user_id, settled_at, profiles:user_id(full_name)")
+      .order("created_at", { ascending: false });
+
+    setSettlements(data || []);
+    setLoading(false);
   };
 
+  useEffect(() => { fetchSettlements(); }, []);
+
+  const handleSettle = async (id: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("settlements")
+      .update({ status: "settled" as any, settled_at: new Date().toISOString(), settled_by: user?.id })
+      .eq("id", id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Settled", description: "Settlement marked as completed." });
+      fetchSettlements();
+    }
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
   return (
-    <Tabs defaultValue="owners" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="owners" className="font-display">Owner Settlements</TabsTrigger>
-        <TabsTrigger value="delivery" className="font-display">Delivery Settlements</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="owners">
-        <Card className="shadow-card">
-          <CardHeader><CardTitle className="font-display text-lg">Owner Settlements</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Orders</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Action</TableHead>
+    <div className="space-y-4">
+      <Card className="shadow-card">
+        <CardHeader><CardTitle className="font-display text-lg">Settlements ({settlements.length})</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden md:table-cell">Date</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {settlements.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No settlements found</TableCell></TableRow>
+              )}
+              {settlements.map((s: any) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-display font-medium">{s.profiles?.full_name || "Unknown"}</TableCell>
+                  <TableCell className="font-display font-semibold text-accent">₹{Number(s.amount).toLocaleString("en-IN")}</TableCell>
+                  <TableCell>
+                    <Badge className={s.status === "settled" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>
+                      {s.status === "settled" ? <CheckCircle className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
+                      {s.status === "settled" ? "Settled" : "Pending"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{new Date(s.created_at).toLocaleDateString("en-IN")}</TableCell>
+                  <TableCell>
+                    {s.status === "pending" && (
+                      <Button size="sm" onClick={() => handleSettle(s.id)} className="font-display">Settle</Button>
+                    )}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ownerSettlements.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-display font-medium">{s.id}</TableCell>
-                    <TableCell className="font-body">{s.name}</TableCell>
-                    <TableCell className="font-display">{s.orders}</TableCell>
-                    <TableCell className="font-display font-semibold text-accent">{s.amount}</TableCell>
-                    <TableCell>
-                      <Badge className={s.status === "Settled" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>
-                        {s.status === "Settled" ? <CheckCircle className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
-                        {s.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {s.status === "Pending" && (
-                        <Button size="sm" onClick={() => handleSettle(s.id)} className="font-display">Settle</Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="delivery">
-        <Card className="shadow-card">
-          <CardHeader><CardTitle className="font-display text-lg">Delivery Staff Settlements</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Staff</TableHead>
-                  <TableHead>Trips</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deliverySettlements.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-display font-medium">{s.id}</TableCell>
-                    <TableCell className="font-body">{s.name}</TableCell>
-                    <TableCell className="font-display">{s.trips}</TableCell>
-                    <TableCell className="font-display font-semibold text-accent">{s.amount}</TableCell>
-                    <TableCell>
-                      <Badge className={s.status === "Settled" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>
-                        {s.status === "Settled" ? <CheckCircle className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
-                        {s.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {s.status === "Pending" && (
-                        <Button size="sm" onClick={() => handleSettle(s.id)} className="font-display">Settle</Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

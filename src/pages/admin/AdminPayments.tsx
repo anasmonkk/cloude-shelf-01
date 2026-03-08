@@ -1,65 +1,69 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
-
-const mockPayments = [
-  { id: "PAY-089", order: "ORD-156", customer: "Arun Kumar", amount: "₹1,155", method: "UPI", status: "Completed", date: "2026-03-08" },
-  { id: "PAY-088", order: "ORD-155", customer: "Meera S", amount: "₹760", method: "Cash", status: "Completed", date: "2026-03-07" },
-  { id: "PAY-087", order: "ORD-154", customer: "Suresh P", amount: "₹2,180", method: "UPI", status: "Refund Pending", date: "2026-03-06" },
-  { id: "PAY-086", order: "ORD-153", customer: "Deepa M", amount: "₹450", method: "UPI", status: "Completed", date: "2026-03-06" },
-];
+import { CreditCard, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminPayments = () => {
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPayments = async () => {
+      const { data } = await supabase
+        .from("payments")
+        .select("id, amount, method, status, created_at, order_id, orders(order_number)")
+        .order("created_at", { ascending: false });
+
+      setPayments(data || []);
+      setLoading(false);
+    };
+    fetchPayments();
+  }, []);
+
+  const statusColor = (s: string) => {
+    const map: Record<string, string> = {
+      pending: "bg-amber-100 text-amber-800",
+      verified: "bg-emerald-100 text-emerald-800",
+      collected: "bg-blue-100 text-blue-800",
+      refunded: "bg-red-100 text-red-800",
+    };
+    return map[s] || "";
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Total Revenue", value: "₹48,200", icon: CreditCard, change: "+18%", up: true },
-          { label: "Platform Commission", value: "₹7,230", icon: TrendingUp, change: "+22%", up: true },
-          { label: "Owner Payouts", value: "₹36,400", icon: ArrowUpRight, change: "+15%", up: true },
-          { label: "Refunds", value: "₹4,570", icon: ArrowDownRight, change: "-8%", up: false },
-        ].map((s) => (
-          <Card key={s.label} className="shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <s.icon className="h-5 w-5 text-primary" />
-                <span className={`text-xs font-medium ${s.up ? "text-emerald-600" : "text-destructive"}`}>{s.change}</span>
-              </div>
-              <p className="text-lg font-display font-bold">{s.value}</p>
-              <p className="text-xs text-muted-foreground font-body">{s.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="font-display text-lg">Recent Payments</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" /> Payments ({payments.length})
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Payment ID</TableHead>
                 <TableHead>Order</TableHead>
-                <TableHead className="hidden md:table-cell">Customer</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead className="hidden md:table-cell">Method</TableHead>
+                <TableHead>Method</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockPayments.map((p) => (
+              {payments.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No payments found</TableCell></TableRow>
+              )}
+              {payments.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell className="font-display font-medium">{p.id}</TableCell>
-                  <TableCell className="font-body text-primary">{p.order}</TableCell>
-                  <TableCell className="hidden md:table-cell font-body">{p.customer}</TableCell>
-                  <TableCell className="font-display font-semibold">{p.amount}</TableCell>
-                  <TableCell className="hidden md:table-cell"><Badge variant="secondary">{p.method}</Badge></TableCell>
-                  <TableCell>
-                    <Badge className={p.status === "Completed" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>{p.status}</Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{p.date}</TableCell>
+                  <TableCell className="font-display font-medium">{(p.orders as any)?.order_number || "—"}</TableCell>
+                  <TableCell className="font-display font-semibold">₹{Number(p.amount).toLocaleString("en-IN")}</TableCell>
+                  <TableCell><Badge variant="secondary">{p.method === "cash_on_delivery" ? "COD" : "Prepaid"}</Badge></TableCell>
+                  <TableCell><Badge className={statusColor(p.status)}>{p.status}</Badge></TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{new Date(p.created_at).toLocaleDateString("en-IN")}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
