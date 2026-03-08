@@ -6,15 +6,27 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const BrowseItems = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [items, setItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deliveryCharge, setDeliveryCharge] = useState(50);
+
+  const handleViewItem = async (itemId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: "Login required", description: "Please log in to view item details.", variant: "destructive" });
+      navigate("/login");
+      return;
+    }
+    navigate(`/item/${itemId}`);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,7 +124,7 @@ const BrowseItems = () => {
                 const imageUrl = item.image_urls?.[0];
 
                 return (
-                  <div key={item.id} className="bg-card rounded-xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-all group cursor-pointer" onClick={() => navigate(`/item/${item.id}`)}>
+                  <div key={item.id} className="bg-card rounded-xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-all group cursor-pointer" onClick={() => handleViewItem(item.id)}>
                     <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
                       {imageUrl ? (
                         <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
@@ -142,7 +154,7 @@ const BrowseItems = () => {
                           <span className="font-semibold text-primary">₹{total.toLocaleString("en-IN")}</span>
                         </div>
                       </div>
-                      <Button size="sm" className="w-full font-display text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/item/${item.id}`); }}>
+                      <Button size="sm" className="w-full font-display text-xs" onClick={(e) => { e.stopPropagation(); handleViewItem(item.id); }}>
                         View Details
                       </Button>
                     </div>
