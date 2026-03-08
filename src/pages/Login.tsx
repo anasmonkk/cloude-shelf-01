@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock } from "lucide-react";
+import { Phone, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -19,10 +19,10 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) {
+    if (!mobile || mobile.length < 10 || !password) {
       toast({
         title: "Missing credentials",
-        description: "Please enter your email and password.",
+        description: "Please enter your mobile number and password.",
         variant: "destructive",
       });
       return;
@@ -30,6 +30,7 @@ const Login = () => {
 
     setLoading(true);
     try {
+      const email = `${mobile}@cloudshelf.app`;
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -86,21 +87,20 @@ const Login = () => {
           <p className="text-muted-foreground font-body">Login to rent items near you</p>
         </div>
 
-        {/* Customer Login Form */}
         <form onSubmit={handleLogin} className="bg-card rounded-xl border border-border p-6 shadow-elevated space-y-5">
           <h2 className="font-display font-bold text-lg text-foreground text-center">Customer Login</h2>
 
           <div className="space-y-2">
-            <Label className="font-body font-medium">Email</Label>
+            <Label className="font-body font-medium">Mobile Number</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="tel"
+                placeholder="Enter 10-digit mobile number"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
                 className="pl-10"
-                autoComplete="email"
+                maxLength={10}
               />
             </div>
           </div>
@@ -154,4 +154,3 @@ const Login = () => {
 };
 
 export default Login;
-
