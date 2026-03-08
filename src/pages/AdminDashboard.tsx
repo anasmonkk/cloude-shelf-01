@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { BarChart3, Users, Package, MapPin, CreditCard, Settings, ShoppingBag, Truck, Loader2 } from "lucide-react";
@@ -162,8 +162,41 @@ const pageTitles: Record<string, string> = {
 
 const AdminDashboard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
   const path = location.pathname;
   const title = pageTitles[path] || "Admin Dashboard";
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/login/admin", { replace: true });
+        return;
+      }
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roleData) {
+        await supabase.auth.signOut();
+        navigate("/login/admin", { replace: true });
+        return;
+      }
+      setAuthChecked(true);
+    };
+    checkAuth();
+  }, [navigate]);
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (path) {
