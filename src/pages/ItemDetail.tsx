@@ -68,6 +68,29 @@ const ItemDetail = () => {
     // Load panchayaths for ward selection
     const { data: pData } = await supabase.from("panchayaths").select("id, name").order("name");
     if (pData) setPanchayaths(pData);
+
+    // Auto-fill saved address from profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("delivery_address, panchayath_id, ward_id")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profile) {
+      if (profile.delivery_address) setDeliveryAddress(profile.delivery_address);
+      if (profile.panchayath_id) {
+        setSelectedPanchayath(profile.panchayath_id);
+        // Load wards for saved panchayath
+        const { data: wData } = await supabase
+          .from("wards")
+          .select("id, ward_number")
+          .eq("panchayath_id", profile.panchayath_id)
+          .order("ward_number");
+        if (wData) setWards(wData);
+        if (profile.ward_id) setSelectedWard(profile.ward_id);
+      }
+    }
+
     setShowOrderDialog(true);
   };
 
@@ -99,6 +122,16 @@ const ItemDetail = () => {
       const paymentMethod = item.payment_type || "cash_on_delivery";
       const totalAmount = ownerPrice + deliveryCharge;
       const orderNumber = `ORD-${Date.now()}`;
+
+      // Save address to profile for future orders
+      await supabase
+        .from("profiles")
+        .update({
+          delivery_address: deliveryAddress,
+          panchayath_id: selectedPanchayath,
+          ward_id: selectedWard,
+        })
+        .eq("id", session.user.id);
 
       const { error } = await supabase.from("orders").insert({
         order_number: orderNumber,
