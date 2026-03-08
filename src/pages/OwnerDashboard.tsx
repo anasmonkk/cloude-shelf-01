@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Package, ShoppingBag, Wallet, User, TruckIcon, BarChart3, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import OwnerItems from "./owner/OwnerItems";
+import OwnerOrders from "./owner/OwnerOrders";
+import OwnerWallet from "./owner/OwnerWallet";
+import OwnerProfile from "./owner/OwnerProfile";
+import OwnerDelivery from "./owner/OwnerDelivery";
 
 const navItems = [
   { label: "Dashboard", path: "/owner", icon: <BarChart3 className="h-4 w-4" /> },
@@ -17,6 +22,7 @@ const navItems = [
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -103,59 +109,75 @@ const OwnerDashboard = () => {
     );
   }
 
-  const statCards = [
-    { label: "Active Listings", value: String(stats.activeListings), icon: Package },
-    { label: "Pending Orders", value: String(stats.pendingOrders), icon: ShoppingBag },
-    { label: "Earnings", value: `₹${stats.earnings.toLocaleString()}`, icon: Wallet },
-    { label: "Completed", value: String(stats.completed), icon: BarChart3 },
-  ];
+  const renderContent = () => {
+    const path = location.pathname;
+    if (path === "/owner/items") return <OwnerItems />;
+    if (path === "/owner/orders") return <OwnerOrders />;
+    if (path === "/owner/wallet") return <OwnerWallet />;
+    if (path === "/owner/delivery") return <OwnerDelivery />;
+    if (path === "/owner/profile") return <OwnerProfile />;
+
+    // Default: dashboard overview
+    const statCards = [
+      { label: "Active Listings", value: String(stats.activeListings), icon: Package },
+      { label: "Pending Orders", value: String(stats.pendingOrders), icon: ShoppingBag },
+      { label: "Earnings", value: `₹${stats.earnings.toLocaleString()}`, icon: Wallet },
+      { label: "Completed", value: String(stats.completed), icon: BarChart3 },
+    ];
+
+    return (
+      <>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {statCards.map((s) => (
+            <Card key={s.label} className="shadow-card">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <s.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-body">{s.label}</p>
+                  <p className="text-lg font-display font-bold text-foreground">{s.value}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Recent Orders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground font-body text-center py-4">No orders yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {recentOrders.map((o: any) => (
+                  <div key={o.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                    <div>
+                      <p className="text-sm font-display font-medium text-foreground">
+                        {o.items?.name || "Item"}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-body">
+                        {o.order_number} · ₹{o.total_amount}
+                      </p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(o.status)} text-primary-foreground font-body font-medium`}>
+                      {formatStatus(o.status)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </>
+    );
+  };
 
   return (
     <DashboardLayout navItems={navItems} title="Vendor Dashboard" role="Vendor">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {statCards.map((s) => (
-          <Card key={s.label} className="shadow-card">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <s.icon className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-body">{s.label}</p>
-                <p className="text-lg font-display font-bold text-foreground">{s.value}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="font-display text-lg">Recent Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentOrders.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-body text-center py-4">No orders yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {recentOrders.map((o: any) => (
-                <div key={o.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
-                  <div>
-                    <p className="text-sm font-display font-medium text-foreground">
-                      {o.items?.name || "Item"}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-body">
-                      {o.order_number} · ₹{o.total_amount}
-                    </p>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(o.status)} text-primary-foreground font-body font-medium`}>
-                    {formatStatus(o.status)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {renderContent()}
     </DashboardLayout>
   );
 };
