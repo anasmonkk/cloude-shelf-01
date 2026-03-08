@@ -5,12 +5,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const demoItems = [
-  { id: 1, name: "Wedding Saree - Kasavu", owner: "Priya's Collection", price: 500, commission: 75, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
-  { id: 2, name: "Power Drill Machine", owner: "Rajan Tools", price: 200, commission: 20, delivery: 80, status: "available", returnIn: "", images: 4, category: "Electronics" },
-  { id: 3, name: "Gold Necklace Set", owner: "Lakshmi Jewels", price: 1500, commission: 300, delivery: 80, status: "rented", returnIn: "4 Hours", images: 3, category: "Ornaments" },
-  { id: 4, name: "DJ Speaker System", owner: "Sound Wave Rentals", price: 800, commission: 80, delivery: 80, status: "available", returnIn: "", images: 5, category: "Electronics" },
-  { id: 5, name: "Bridal Lehenga", owner: "Meera Fashion", price: 1200, commission: 180, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
-  { id: 6, name: "DSLR Camera Kit", owner: "Lens Hub", price: 600, commission: 60, delivery: 80, status: "rented", returnIn: "2 Hours", images: 4, category: "Electronics" },
+  { id: 1, name: "Wedding Saree - Kasavu", vendor: "Priya's Collection", price: 500, commission: 75, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
+  { id: 2, name: "Power Drill Machine", vendor: "Rajan Tools", price: 200, commission: 20, delivery: 80, status: "available", returnIn: "", images: 4, category: "Electronics" },
+  { id: 3, name: "Gold Necklace Set", vendor: "Lakshmi Jewels", price: 1500, commission: 300, delivery: 80, status: "rented", returnIn: "4 Hours", images: 3, category: "Ornaments" },
+  { id: 4, name: "DJ Speaker System", vendor: "Sound Wave Rentals", price: 800, commission: 80, delivery: 80, status: "available", returnIn: "", images: 5, category: "Electronics" },
+  { id: 5, name: "Bridal Lehenga", vendor: "Meera Fashion", price: 1200, commission: 180, delivery: 80, status: "available", returnIn: "", images: 3, category: "Dress" },
+  { id: 6, name: "DSLR Camera Kit", vendor: "Lens Hub", price: 600, commission: 60, delivery: 80, status: "rented", returnIn: "2 Hours", images: 4, category: "Electronics" },
 ];
 
 const categories = ["All", "Dress", "Electronics", "Ornaments"];
