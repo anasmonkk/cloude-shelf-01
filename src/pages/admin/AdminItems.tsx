@@ -66,7 +66,7 @@ const AdminItems = () => {
 
   const filtered = items.filter(i =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
-    (i.profiles as any)?.full_name?.toLowerCase().includes(search.toLowerCase())
+    i.vendor_name?.toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
