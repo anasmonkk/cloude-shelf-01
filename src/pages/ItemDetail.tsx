@@ -26,7 +26,6 @@ const ItemDetail = () => {
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cash_on_delivery" | "prepaid">("cash_on_delivery");
   const [panchayaths, setPanchayaths] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
   const [selectedPanchayath, setSelectedPanchayath] = useState("");
