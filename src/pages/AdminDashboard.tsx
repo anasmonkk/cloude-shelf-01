@@ -135,7 +135,7 @@ const DashboardHome = () => {
               {pendingSettlements.map((s: any) => (
                 <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
                   <div>
-                    <p className="text-sm font-display font-medium text-foreground">{s.profiles?.full_name || "Unknown"}</p>
+                    <p className="text-sm font-display font-medium text-foreground">{s.profile_name || "Unknown"}</p>
                     <Badge variant="secondary" className="text-xs">Pending</Badge>
                   </div>
                   <span className="text-sm font-display font-semibold text-accent">₹{Number(s.amount).toLocaleString("en-IN")}</span>
