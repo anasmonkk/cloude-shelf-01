@@ -23,7 +23,7 @@ const BrowseItems = () => {
         <div className="container">
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">Browse Items</h1>
-            <p className="text-muted-foreground font-body">Rent items from owners in your area</p>
+            <p className="text-muted-foreground font-body">Rent items from vendors in your area</p>
           </div>
 
           {/* Search & Filters */}
