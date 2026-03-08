@@ -7,6 +7,7 @@ import SplashScreen from "./pages/SplashScreen";
 import VendorRegister from "./pages/VendorRegister";
 import Index from "./pages/Index";
 import BrowseItems from "./pages/BrowseItems";
+import ItemDetail from "./pages/ItemDetail";
 import Login from "./pages/Login";
 import RoleLogin from "./pages/RoleLogin";
 import Register from "./pages/Register";
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/" element={<SplashScreen />} />
           <Route path="/home" element={<Index />} />
           <Route path="/browse" element={<BrowseItems />} />
+          <Route path="/item/:id" element={<ItemDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/login/:role" element={<RoleLogin />} />
           <Route path="/register" element={<Register />} />
