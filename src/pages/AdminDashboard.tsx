@@ -159,6 +159,7 @@ const pageTitles: Record<string, string> = {
   "/admin/areas": "Areas",
   "/admin/payments": "Payments",
   "/admin/items": "Items Management",
+  "/admin/customers": "Customers",
   "/admin/settlements": "Settlements",
 };
 
