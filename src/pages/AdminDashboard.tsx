@@ -38,7 +38,7 @@ const DashboardHome = () => {
           supabase.from("user_roles").select("role"),
           supabase.from("areas").select("id", { count: "exact", head: true }),
           supabase.from("orders").select("order_number, status, total_amount, created_at").order("created_at", { ascending: false }).limit(5),
-          supabase.from("settlements").select("id, amount, status, user_id, profiles:user_id(full_name)").eq("status", "pending").limit(5),
+          supabase.from("settlements").select("id, amount, status, user_id").eq("status", "pending").limit(5),
         ]);
 
         const roles = rolesRes.data || [];
@@ -53,7 +53,17 @@ const DashboardHome = () => {
         });
 
         setRecentOrders(recentOrdersRes.data || []);
-        setPendingSettlements(settlementsRes.data || []);
+
+        // Fetch profile names for settlements
+        const settlements = settlementsRes.data || [];
+        if (settlements.length > 0) {
+          const userIds = [...new Set(settlements.map(s => s.user_id))];
+          const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+          const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name]));
+          setPendingSettlements(settlements.map(s => ({ ...s, profile_name: profileMap[s.user_id] || "Unknown" })));
+        } else {
+          setPendingSettlements([]);
+        }
       } catch (err) {
         console.error("Dashboard fetch error:", err);
       } finally {
@@ -125,7 +135,7 @@ const DashboardHome = () => {
               {pendingSettlements.map((s: any) => (
                 <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
                   <div>
-                    <p className="text-sm font-display font-medium text-foreground">{s.profiles?.full_name || "Unknown"}</p>
+                    <p className="text-sm font-display font-medium text-foreground">{s.profile_name || "Unknown"}</p>
                     <Badge variant="secondary" className="text-xs">Pending</Badge>
                   </div>
                   <span className="text-sm font-display font-semibold text-accent">₹{Number(s.amount).toLocaleString("en-IN")}</span>
