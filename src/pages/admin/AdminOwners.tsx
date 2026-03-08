@@ -76,7 +76,7 @@ const AdminOwners = () => {
       </div>
 
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="font-display text-lg">Registered Owners ({filtered.length})</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="font-display text-lg">Registered Vendors ({filtered.length})</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
