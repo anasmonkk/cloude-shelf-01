@@ -22,6 +22,7 @@ const navItems = [
   { label: "Areas", path: "/admin/areas", icon: <MapPin className="h-4 w-4" /> },
   { label: "Payments", path: "/admin/payments", icon: <CreditCard className="h-4 w-4" /> },
   { label: "Items", path: "/admin/items", icon: <Package className="h-4 w-4" /> },
+  { label: "Customers", path: "/admin/customers", icon: <UserCheck className="h-4 w-4" /> },
   { label: "Settlements", path: "/admin/settlements", icon: <Settings className="h-4 w-4" /> },
 ];
 
