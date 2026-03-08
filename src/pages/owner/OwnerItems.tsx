@@ -35,7 +35,7 @@ const OwnerItems = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", owner_price: "", category_id: "", image_url_1: "", image_url_2: "", image_url_3: "" });
+  const [form, setForm] = useState({ name: "", description: "", owner_price: "", category_id: "", payment_type: "cash_on_delivery", image_url_1: "", image_url_2: "", image_url_3: "" });
 
   useEffect(() => {
     fetchData();
