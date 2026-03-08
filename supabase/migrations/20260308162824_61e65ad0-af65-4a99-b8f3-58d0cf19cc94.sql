@@ -1,0 +1,1 @@
+ALTER TABLE public.items ADD COLUMN payment_type text NOT NULL DEFAULT 'cash_on_delivery' CHECK (payment_type IN ('prepaid', 'cash_on_delivery'));
