@@ -32,6 +32,7 @@ const App = () => (
           <Route path="/" element={<SplashScreen />} />
           <Route path="/home" element={<Index />} />
           <Route path="/browse" element={<BrowseItems />} />
+          <Route path="/item/:id" element={<ItemDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/login/:role" element={<RoleLogin />} />
           <Route path="/register" element={<Register />} />
