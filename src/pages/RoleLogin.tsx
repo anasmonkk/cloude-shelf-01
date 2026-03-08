@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Phone, Lock } from "lucide-react";
+import { Phone, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,9 +33,12 @@ const roleDashboards: Record<string, string> = {
   superadmin: "/superadmin",
 };
 
+const useEmailLogin = (role: string | undefined) => role === "superadmin";
+
 const RoleLogin = () => {
   const { role } = useParams<{ role: string }>();
   const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -44,18 +47,27 @@ const RoleLogin = () => {
   const label = roleLabels[role || ""] || "User";
   const dashboard = roleDashboards[role || ""] || "/";
   const dbRole = roleToDbRole[role || ""];
+  const isEmailLogin = useEmailLogin(role);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mobile || mobile.length < 10 || !password) {
-      toast({ title: "Missing credentials", description: "Please enter your mobile number and password.", variant: "destructive" });
-      return;
+
+    if (isEmailLogin) {
+      if (!email || !password) {
+        toast({ title: "Missing credentials", description: "Please enter your email and password.", variant: "destructive" });
+        return;
+      }
+    } else {
+      if (!mobile || mobile.length < 10 || !password) {
+        toast({ title: "Missing credentials", description: "Please enter your mobile number and password.", variant: "destructive" });
+        return;
+      }
     }
 
     setLoading(true);
     try {
-      const email = `${mobile}@cloudshelf.app`;
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const loginEmail = isEmailLogin ? email : `${mobile}@cloudshelf.app`;
+      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
       if (error) throw error;
 
       const userId = data.user?.id;
@@ -103,20 +115,37 @@ const RoleLogin = () => {
         <form onSubmit={handleLogin} className="bg-card rounded-xl border border-border p-6 shadow-elevated space-y-5">
           <h2 className="font-display font-bold text-lg text-foreground text-center">{label} Login</h2>
 
-          <div className="space-y-2">
-            <Label className="font-body font-medium">Mobile Number</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="tel"
-                placeholder="Enter 10-digit mobile number"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
-                className="pl-10"
-                maxLength={10}
-              />
+          {isEmailLogin ? (
+            <div className="space-y-2">
+              <Label className="font-body font-medium">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  autoComplete="email"
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label className="font-body font-medium">Mobile Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="tel"
+                  placeholder="Enter 10-digit mobile number"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
+                  className="pl-10"
+                  maxLength={10}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label className="font-body font-medium">Password</Label>
