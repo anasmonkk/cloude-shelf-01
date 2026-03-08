@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import RoleLogin from "./pages/RoleLogin";
 import Register from "./pages/Register";
 import AdminRegister from "./pages/AdminRegister";
+import DeliveryRegister from "./pages/DeliveryRegister";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
