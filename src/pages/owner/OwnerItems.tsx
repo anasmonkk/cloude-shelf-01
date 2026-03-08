@@ -85,7 +85,7 @@ const OwnerItems = () => {
       toast({ title: "Failed to add item", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Item submitted for approval" });
-      setForm({ name: "", description: "", owner_price: "", category_id: "", image_url_1: "", image_url_2: "", image_url_3: "" });
+      setForm({ name: "", description: "", owner_price: "", category_id: "", payment_type: "cash_on_delivery", image_url_1: "", image_url_2: "", image_url_3: "" });
       setDialogOpen(false);
       fetchData();
     }
