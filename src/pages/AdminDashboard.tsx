@@ -12,6 +12,7 @@ import AdminAreas from "./admin/AdminAreas";
 import AdminPayments from "./admin/AdminPayments";
 import AdminItems from "./admin/AdminItems";
 import AdminSettlements from "./admin/AdminSettlements";
+import AdminCustomers from "./admin/AdminCustomers";
 
 const navItems = [
   { label: "Dashboard", path: "/admin", icon: <BarChart3 className="h-4 w-4" /> },
