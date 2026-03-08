@@ -156,20 +156,22 @@ const RoleLogin = () => {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label className="font-body font-medium">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                autoComplete="current-password"
-              />
+          {!isMobileOnly && (
+            <div className="space-y-2">
+              <Label className="font-body font-medium">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <Button type="submit" className="w-full font-display font-semibold" disabled={loading}>
             {loading ? "Logging in..." : `Login as ${label}`}
