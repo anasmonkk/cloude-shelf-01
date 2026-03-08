@@ -97,6 +97,7 @@ const ItemDetail = () => {
       const ownerPrice = Number(item.owner_price);
       const commissionAmount = ownerPrice * commissionRate / 100;
       const paymentMethod = item.payment_type || "cash_on_delivery";
+      const totalAmount = ownerPrice + deliveryCharge;
       const orderNumber = `ORD-${Date.now()}`;
 
       const { error } = await supabase.from("orders").insert({
