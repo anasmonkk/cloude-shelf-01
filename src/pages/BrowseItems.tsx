@@ -154,7 +154,7 @@ const BrowseItems = () => {
                           <span className="font-semibold text-primary">₹{total.toLocaleString("en-IN")}</span>
                         </div>
                       </div>
-                      <Button size="sm" className="w-full font-display text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/item/${item.id}`); }}>
+                      <Button size="sm" className="w-full font-display text-xs" onClick={(e) => { e.stopPropagation(); handleViewItem(item.id); }}>
                         View Details
                       </Button>
                     </div>
