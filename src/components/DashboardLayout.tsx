@@ -57,7 +57,7 @@ const DashboardLayout = ({ children, navItems, title, role }: DashboardLayoutPro
           ))}
         </nav>
 
-        <div className="absolute bottom-4 left-3 right-3">
+        <div className="p-3 border-t border-sidebar-border mt-auto">
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/50 hover:text-sidebar-foreground"
