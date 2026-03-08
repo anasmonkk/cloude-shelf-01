@@ -166,6 +166,12 @@ const RoleLogin = () => {
             {loading ? "Logging in..." : `Login as ${label}`}
           </Button>
 
+          {(role === "admin" || role === "superadmin") && (
+            <p className="text-center text-xs text-muted-foreground font-body">
+              Contact your Super Admin to get an account.
+            </p>
+          )}
+
           <p className="text-center text-sm text-muted-foreground font-body">
             <Link to="/login" className="text-primary hover:underline font-medium">← Back to Customer Login</Link>
           </p>
