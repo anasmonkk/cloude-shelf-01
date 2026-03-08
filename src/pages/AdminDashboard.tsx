@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { BarChart3, Users, Package, MapPin, CreditCard, Settings, ShoppingBag, Truck, Loader2 } from "lucide-react";
