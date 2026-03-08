@@ -218,6 +218,7 @@ const AdminDashboard = () => {
       case "/admin/areas": return <AdminAreas />;
       case "/admin/payments": return <AdminPayments />;
       case "/admin/items": return <AdminItems />;
+      case "/admin/customers": return <AdminCustomers />;
       case "/admin/settlements": return <AdminSettlements />;
       default: return <DashboardHome />;
     }
