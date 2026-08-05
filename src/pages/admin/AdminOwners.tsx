@@ -24,24 +24,23 @@ const AdminOwners = () => {
 
     const ownerIds = (ownerRoles || []).map(r => r.user_id);
 
-    // Get all users with ANY role
-    const { data: allRoles } = await supabase.from("user_roles").select("user_id, role");
-    const usersWithRoles = new Set((allRoles || []).map(r => r.user_id));
-
-    // Get all profiles
-    const { data: allProfiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, mobile, created_at")
+    // Pending vendors come from the vendor applications list
+    const { data: applications } = await supabase
+      .from("vendor_applications")
+      .select("id, user_id, full_name, mobile, panchayath_id, created_at")
+      .eq("status", "pending")
       .order("created_at", { ascending: false });
 
-    // Pending vendors = users with NO role who have an owner_areas entry (registered via vendor signup)
-    const { data: ownerAreasData } = await supabase
-      .from("owner_areas")
-      .select("owner_id");
-    const ownerAreaUserIds = new Set((ownerAreasData || []).map(oa => oa.owner_id));
-
-    const pending = (allProfiles || []).filter(p => !usersWithRoles.has(p.id) && ownerAreaUserIds.has(p.id));
-    setPendingVendors(pending);
+    setPendingVendors(
+      (applications || []).map(a => ({
+        id: a.user_id,
+        application_id: a.id,
+        panchayath_id: a.panchayath_id,
+        full_name: a.full_name,
+        mobile: a.mobile,
+        created_at: a.created_at,
+      }))
+    );
 
     // Active vendors
     if (ownerIds.length > 0) {
@@ -82,19 +81,40 @@ const AdminOwners = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const approveVendor = async (userId: string) => {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "owner" });
-    if (error) {
+  const approveVendor = async (vendor: any) => {
+    const { error } = await supabase.from("user_roles").insert({ user_id: vendor.id, role: "owner" });
+    if (error && !error.message.includes("duplicate")) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+
+    // Link the vendor to the area covering their panchayath
+    if (vendor.panchayath_id) {
+      const { data: areaLink } = await supabase
+        .from("area_panchayaths")
+        .select("area_id")
+        .eq("panchayath_id", vendor.panchayath_id)
+        .maybeSingle();
+      if (areaLink) {
+        await supabase.from("owner_areas").insert({ owner_id: vendor.id, area_id: areaLink.area_id });
+      }
+    }
+
+    await supabase.from("vendor_applications").update({ status: "approved" }).eq("id", vendor.application_id);
+
     toast({ title: "Vendor approved", description: "The vendor can now login and list items." });
     fetchData();
   };
 
-  const rejectVendor = async (userId: string) => {
-    // Remove owner_areas entry and delete the auth user's profile
-    await supabase.from("owner_areas").delete().eq("owner_id", userId);
+  const rejectVendor = async (vendor: any) => {
+    const { error } = await supabase
+      .from("vendor_applications")
+      .update({ status: "rejected" })
+      .eq("id", vendor.application_id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: "Vendor rejected", description: "The vendor registration has been declined." });
     fetchData();
   };
@@ -133,10 +153,10 @@ const AdminOwners = () => {
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{new Date(u.created_at).toLocaleDateString("en-IN")}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button size="sm" onClick={() => approveVendor(u.id)}>
+                        <Button size="sm" onClick={() => approveVendor(u)}>
                           <CheckCircle className="h-4 w-4 mr-1" /> Approve
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => rejectVendor(u.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => rejectVendor(u)}>
                           <XCircle className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
