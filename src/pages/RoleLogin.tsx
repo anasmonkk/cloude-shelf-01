@@ -104,6 +104,26 @@ const RoleLogin = () => {
               description = "Your vendor account is still awaiting admin approval.";
             } else if (application?.status === "rejected") {
               description = "Your vendor registration was declined. Please contact an admin.";
+            } else {
+              const { data: assignedRoles } = await supabase
+                .from("user_roles")
+                .select("role")
+                .eq("user_id", userId);
+              const assignedRole = assignedRoles?.[0]?.role;
+              const assignedLabel = assignedRole === "super_admin"
+                ? "Super Admin"
+                : assignedRole === "admin"
+                  ? "Admin"
+                  : assignedRole === "delivery"
+                    ? "Delivery Staff"
+                    : assignedRole === "customer"
+                      ? "Customer"
+                      : null;
+              if (assignedLabel) {
+                description = `This mobile number is registered as ${assignedLabel}. Please use the ${assignedLabel} login.`;
+              } else {
+                description = "No vendor registration was found for this mobile number. Please sign up as a vendor first.";
+              }
             }
           }
           await supabase.auth.signOut();
