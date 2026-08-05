@@ -93,8 +93,21 @@ const RoleLogin = () => {
         if (roleError) throw roleError;
 
         if (!roleData) {
+          let description = `You don't have ${label} access.`;
+          if (role === "owner") {
+            const { data: application } = await supabase
+              .from("vendor_applications")
+              .select("status")
+              .eq("user_id", userId)
+              .maybeSingle();
+            if (application?.status === "pending") {
+              description = "Your vendor account is still awaiting admin approval.";
+            } else if (application?.status === "rejected") {
+              description = "Your vendor registration was declined. Please contact an admin.";
+            }
+          }
           await supabase.auth.signOut();
-          toast({ title: "Access denied", description: `You don't have ${label} access.`, variant: "destructive" });
+          toast({ title: "Access denied", description, variant: "destructive" });
           return;
         }
       }

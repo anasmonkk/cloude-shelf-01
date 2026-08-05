@@ -76,17 +76,16 @@ const VendorRegister = () => {
 
       if (error) throw error;
 
-      // Auto-assign area based on panchayath
+      // Record the pending vendor application for admin approval
       if (data.user) {
-        const { data: areaLink } = await supabase
-          .from("area_panchayaths")
-          .select("area_id")
-          .eq("panchayath_id", panchayathId)
-          .maybeSingle();
-
-        if (areaLink) {
-          await supabase.from("owner_areas").insert({ owner_id: data.user.id, area_id: areaLink.area_id });
-        }
+        const { error: appError } = await supabase.from("vendor_applications").insert({
+          user_id: data.user.id,
+          full_name: name.trim(),
+          mobile,
+          panchayath_id: panchayathId,
+          ward_id: wardId,
+        });
+        if (appError) throw appError;
       }
 
       // Sign out immediately — vendor needs admin approval before login
