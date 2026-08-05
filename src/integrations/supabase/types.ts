@@ -539,6 +539,54 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_applications: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          mobile: string
+          panchayath_id: string | null
+          status: string
+          user_id: string
+          ward_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          mobile: string
+          panchayath_id?: string | null
+          status?: string
+          user_id: string
+          ward_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          mobile?: string
+          panchayath_id?: string | null
+          status?: string
+          user_id?: string
+          ward_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_applications_panchayath_id_fkey"
+            columns: ["panchayath_id"]
+            isOneToOne: false
+            referencedRelation: "panchayaths"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_applications_ward_id_fkey"
+            columns: ["ward_id"]
+            isOneToOne: false
+            referencedRelation: "wards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallets: {
         Row: {
           balance: number
