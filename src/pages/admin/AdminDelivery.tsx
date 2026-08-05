@@ -24,11 +24,23 @@ const AdminDelivery = () => {
     const { data: allRoles } = await supabase.from("user_roles").select("user_id");
     const usersWithRoles = new Set((allRoles || []).map(r => r.user_id));
 
-    // All profiles
-    const { data: allProfiles } = await supabase.from("profiles").select("id, full_name, mobile, created_at, date_of_birth").order("created_at", { ascending: false });
+    // Pending: delivery applications only (users who signed up on the delivery portal)
+    const { data: applications } = await supabase
+      .from("vendor_applications")
+      .select("id, user_id, full_name, mobile, created_at")
+      .eq("status", "pending")
+      .eq("requested_role", "delivery")
+      .order("created_at", { ascending: false });
 
-    // Pending: users without any role (registered but not approved)
-    const pending = (allProfiles || []).filter(p => !usersWithRoles.has(p.id));
+    const pending = (applications || [])
+      .filter(a => !usersWithRoles.has(a.user_id))
+      .map(a => ({
+        id: a.user_id,
+        application_id: a.id,
+        full_name: a.full_name,
+        mobile: a.mobile,
+        created_at: a.created_at,
+      }));
     setPendingUsers(pending);
 
     // Active delivery staff
@@ -64,7 +76,15 @@ const AdminDelivery = () => {
 
   const approveDelivery = async (userId: string) => {
     const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "delivery" });
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (error && !error.message.includes("duplicate")) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    await supabase
+      .from("vendor_applications")
+      .update({ status: "approved" })
+      .eq("user_id", userId)
+      .eq("requested_role", "delivery");
     toast({ title: "Delivery staff approved" });
     fetchData();
   };

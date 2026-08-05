@@ -29,6 +29,7 @@ const AdminOwners = () => {
       .from("vendor_applications")
       .select("id, user_id, full_name, mobile, panchayath_id, created_at")
       .eq("status", "pending")
+      .eq("requested_role", "owner")
       .order("created_at", { ascending: false });
 
     setPendingVendors(

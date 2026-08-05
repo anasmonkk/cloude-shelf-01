@@ -23,12 +23,17 @@ const SAAdmins = () => {
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
-    const [rolesRes, areasRes, adminAreasRes, allRolesRes, allProfilesRes] = await Promise.all([
+    const [rolesRes, areasRes, adminAreasRes, allRolesRes, applicationsRes] = await Promise.all([
       supabase.from("user_roles").select("user_id").eq("role", "admin"),
       supabase.from("areas").select("id, name").order("name"),
       supabase.from("admin_areas").select("admin_id, area_id"),
       supabase.from("user_roles").select("user_id"),
-      supabase.from("profiles").select("id, full_name, mobile, created_at").order("created_at", { ascending: false }),
+      supabase
+        .from("vendor_applications")
+        .select("id, user_id, full_name, mobile, created_at")
+        .eq("status", "pending")
+        .eq("requested_role", "admin")
+        .order("created_at", { ascending: false }),
     ]);
 
     const adminIds = (rolesRes.data || []).map(r => r.user_id);
@@ -50,9 +55,17 @@ const SAAdmins = () => {
     setAdmins(adminProfiles);
     setAreas(areasRes.data || []);
 
-    // Pending users (no role assigned)
+    // Pending admin applications only (users who signed up on the admin portal)
     const usersWithRoles = new Set((allRolesRes.data || []).map(r => r.user_id));
-    const pending = (allProfilesRes.data || []).filter(p => !usersWithRoles.has(p.id));
+    const pending = (applicationsRes.data || [])
+      .filter(a => !usersWithRoles.has(a.user_id))
+      .map(a => ({
+        id: a.user_id,
+        application_id: a.id,
+        full_name: a.full_name,
+        mobile: a.mobile,
+        created_at: a.created_at,
+      }));
     setPendingUsers(pending);
 
     setLoading(false);
@@ -62,7 +75,15 @@ const SAAdmins = () => {
 
   const approveAdmin = async (userId: string) => {
     const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (error && !error.message.includes("duplicate")) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    await supabase
+      .from("vendor_applications")
+      .update({ status: "approved" })
+      .eq("user_id", userId)
+      .eq("requested_role", "admin");
     toast({ title: "Admin approved" });
     fetchData();
   };

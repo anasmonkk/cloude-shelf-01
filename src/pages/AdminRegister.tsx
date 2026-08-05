@@ -50,6 +50,16 @@ const AdminRegister = () => {
       if (error) throw error;
 
       // No admin role is assigned here — Super Admin must approve and assign the role
+      if (data.user) {
+        const { error: appError } = await supabase.from("vendor_applications").insert({
+          user_id: data.user.id,
+          full_name: name,
+          mobile,
+          requested_role: "admin",
+        });
+        if (appError) throw appError;
+      }
+
       await supabase.auth.signOut();
 
       toast({
