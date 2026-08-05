@@ -546,6 +546,7 @@ export type Database = {
           id: string
           mobile: string
           panchayath_id: string | null
+          requested_role: Database["public"]["Enums"]["app_role"]
           status: string
           user_id: string
           ward_id: string | null
@@ -556,6 +557,7 @@ export type Database = {
           id?: string
           mobile: string
           panchayath_id?: string | null
+          requested_role?: Database["public"]["Enums"]["app_role"]
           status?: string
           user_id: string
           ward_id?: string | null
@@ -566,6 +568,7 @@ export type Database = {
           id?: string
           mobile?: string
           panchayath_id?: string | null
+          requested_role?: Database["public"]["Enums"]["app_role"]
           status?: string
           user_id?: string
           ward_id?: string | null
