@@ -72,6 +72,15 @@ const DeliveryRegister = () => {
         // Update profile with DOB
         await supabase.from("profiles").update({ date_of_birth: dob } as any).eq("id", data.user.id);
         // Note: No role assigned yet — admin must approve
+        const { error: appError } = await supabase.from("vendor_applications").insert({
+          user_id: data.user.id,
+          full_name: name,
+          mobile,
+          panchayath_id: panchayathId,
+          ward_id: wardId,
+          requested_role: "delivery",
+        });
+        if (appError) throw appError;
       }
 
       await supabase.auth.signOut();
