@@ -84,6 +84,7 @@ const VendorRegister = () => {
           mobile,
           panchayath_id: panchayathId,
           ward_id: wardId,
+          requested_role: "owner",
         });
         if (appError) throw appError;
       }
