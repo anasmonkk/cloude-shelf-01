@@ -36,10 +36,10 @@ const ItemDetail = () => {
       const [itemRes, delRes] = await Promise.all([
         supabase
           .from("items")
-          .select("id, name, description, owner_price, status, image_urls, owner_id, category_id, payment_type, categories(name, commission_rate)")
+          .select("id, name, description, owner_price, status, image_urls, video_url, owner_id, category_id, payment_type, categories(name, commission_rate)")
           .eq("id", id!)
           .single(),
-        supabase.from("delivery_config").select("fixed_charge").limit(1).single(),
+        supabase.from("delivery_config").select("fixed_charge").limit(1).maybeSingle(),
       ]);
 
       if (itemRes.data) {
@@ -48,7 +48,7 @@ const ItemDetail = () => {
           .from("profiles")
           .select("full_name")
           .eq("id", itemRes.data.owner_id)
-          .single();
+          .maybeSingle();
         if (profile) setVendorName(profile.full_name);
       }
       if (delRes.data) setDeliveryCharge(Number(delRes.data.fixed_charge));
