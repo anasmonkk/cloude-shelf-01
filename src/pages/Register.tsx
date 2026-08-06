@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+
 import { Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +14,12 @@ import logo from "@/assets/logo.png";
 const CUSTOMER_DEFAULT_PASSWORD = "cloudshelf_customer_2024";
 
 const Register = () => {
+  const [searchParams] = useSearchParams();
+  const prefillMobile = (searchParams.get("mobile") || "").replace(/\D/g, "").slice(0, 10);
+  const redirectTo = searchParams.get("redirect");
+
   const [name, setName] = useState("");
-  const [mobile, setMobile] = useState("");
+  const [mobile, setMobile] = useState(prefillMobile);
   const [stateId, setStateId] = useState("");
   const [districtId, setDistrictId] = useState("");
   const [panchayathId, setPanchayathId] = useState("");
@@ -28,6 +33,7 @@ const Register = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+
 
   useEffect(() => {
     supabase.from("states").select("id, name").then(({ data }) => {
@@ -77,7 +83,8 @@ const Register = () => {
       if (error) throw error;
 
       toast({ title: "Account created!", description: "You can now login with your mobile number." });
-      navigate("/login");
+      navigate(`/login?mobile=${mobile}${redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ""}`);
+
     } catch (error: any) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
     } finally {
