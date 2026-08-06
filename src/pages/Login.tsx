@@ -22,11 +22,11 @@ import logo from "@/assets/logo.png";
 const CUSTOMER_DEFAULT_PASSWORD = "cloudshelf_customer_2024";
 
 const Login = () => {
-  const [mobile, setMobile] = useState("");
+  const [searchParams] = useSearchParams();
+  const [mobile, setMobile] = useState((searchParams.get("mobile") || "").replace(/\D/g, "").slice(0, 10));
   const [loading, setLoading] = useState(false);
   const [notRegistered, setNotRegistered] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const redirectTo = searchParams.get("redirect");
 
