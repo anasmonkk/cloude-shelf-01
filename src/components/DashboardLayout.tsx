@@ -9,6 +9,7 @@ interface NavItem {
   label: string;
   path: string;
   icon: ReactNode;
+  badge?: number;
 }
 
 interface DashboardLayoutProps {
@@ -53,6 +54,11 @@ const DashboardLayout = ({ children, navItems, title, role }: DashboardLayoutPro
             >
               {item.icon}
               {item.label}
+              {item.badge ? (
+                <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-accent text-accent-foreground text-[11px] font-medium flex items-center justify-center">
+                  {item.badge}
+                </span>
+              ) : null}
             </Link>
           ))}
         </nav>
