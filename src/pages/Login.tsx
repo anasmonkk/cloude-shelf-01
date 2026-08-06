@@ -1,9 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Phone } from "lucide-react";
+import { Phone, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,10 +24,18 @@ const CUSTOMER_DEFAULT_PASSWORD = "cloudshelf_customer_2024";
 const Login = () => {
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(false);
+  const [notRegistered, setNotRegistered] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const redirectTo = searchParams.get("redirect");
+
+  const goToSignUp = () => {
+    const params = new URLSearchParams();
+    if (mobile) params.set("mobile", mobile);
+    if (redirectTo) params.set("redirect", redirectTo);
+    navigate(`/register${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +57,11 @@ const Login = () => {
         password: CUSTOMER_DEFAULT_PASSWORD,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Mobile number not registered yet — prompt sign up
+        setNotRegistered(true);
+        return;
+      }
 
       const userId = data.user?.id;
       if (!userId) throw new Error("Unable to verify user session.");
@@ -68,13 +90,14 @@ const Login = () => {
     } catch (error: any) {
       toast({
         title: "Login failed",
-        description: error?.message || "Mobile number not registered. Please sign up first.",
+        description: error?.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
