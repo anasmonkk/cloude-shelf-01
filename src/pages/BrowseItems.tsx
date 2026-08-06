@@ -37,13 +37,14 @@ const BrowseItems = () => {
           .eq("status", "active")
           .order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name"),
-        supabase.from("delivery_config").select("fixed_charge").limit(1).single(),
+        supabase.from("delivery_config").select("fixed_charge").limit(1).maybeSingle(),
       ]);
 
-      // Fetch vendor names
+      // Vendor names are private — only fetch them for signed-in users
+      const { data: { session } } = await supabase.auth.getSession();
       const ownerIds = [...new Set((itemsRes.data || []).map(i => i.owner_id))];
       let profileMap: Record<string, string> = {};
-      if (ownerIds.length > 0) {
+      if (session && ownerIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name")
@@ -53,7 +54,7 @@ const BrowseItems = () => {
 
       setItems((itemsRes.data || []).map(item => ({
         ...item,
-        vendor_name: profileMap[item.owner_id] || "—",
+        vendor_name: profileMap[item.owner_id] || "",
       })));
       setCategories(catsRes.data || []);
       if (delRes.data) setDeliveryCharge(Number(delRes.data.fixed_charge));
@@ -61,6 +62,7 @@ const BrowseItems = () => {
     };
     fetchData();
   }, []);
+
 
   const filtered = items.filter(item => {
     const matchesCategory = selectedCategory === "All" || (item.categories as any)?.name === selectedCategory;
