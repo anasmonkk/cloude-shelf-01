@@ -37,13 +37,14 @@ const BrowseItems = () => {
           .eq("status", "active")
           .order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name"),
-        supabase.from("delivery_config").select("fixed_charge").limit(1).single(),
+        supabase.from("delivery_config").select("fixed_charge").limit(1).maybeSingle(),
       ]);
 
-      // Fetch vendor names
+      // Vendor names are private — only fetch them for signed-in users
+      const { data: { session } } = await supabase.auth.getSession();
       const ownerIds = [...new Set((itemsRes.data || []).map(i => i.owner_id))];
       let profileMap: Record<string, string> = {};
-      if (ownerIds.length > 0) {
+      if (session && ownerIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name")
@@ -53,7 +54,7 @@ const BrowseItems = () => {
 
       setItems((itemsRes.data || []).map(item => ({
         ...item,
-        vendor_name: profileMap[item.owner_id] || "—",
+        vendor_name: profileMap[item.owner_id] || "",
       })));
       setCategories(catsRes.data || []);
       if (delRes.data) setDeliveryCharge(Number(delRes.data.fixed_charge));
@@ -62,9 +63,11 @@ const BrowseItems = () => {
     fetchData();
   }, []);
 
+
   const filtered = items.filter(item => {
     const matchesCategory = selectedCategory === "All" || (item.categories as any)?.name === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.vendor_name.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchesSearch = item.name.toLowerCase().includes(q) || (item.vendor_name || "").toLowerCase().includes(q);
     return matchesCategory && matchesSearch;
   });
 
@@ -138,7 +141,7 @@ const BrowseItems = () => {
                     <div className="p-4 space-y-3">
                       <div>
                         <h3 className="font-display font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{item.name}</h3>
-                        <p className="text-xs text-muted-foreground font-body">{item.vendor_name}</p>
+                        {item.vendor_name && <p className="text-xs text-muted-foreground font-body">{item.vendor_name}</p>}
                       </div>
                       <div className="space-y-1 text-xs font-body">
                         <div className="flex justify-between">
