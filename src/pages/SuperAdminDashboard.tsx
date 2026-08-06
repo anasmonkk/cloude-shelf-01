@@ -36,11 +36,15 @@ const pageTitles: Record<string, string> = {
 const DashboardHome = () => {
   const [stats, setStats] = useState({ states: 0, districts: 0, panchayaths: 0, areas: 0, wards: 0, orders: 0, items: 0, admins: 0, owners: 0, delivery: 0, customers: 0 });
   const [categories, setCategories] = useState<any[]>([]);
+  const [revenue, setRevenue] = useState({ gross: 0, commission: 0, delivery: 0, pendingSettlement: 0 });
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [pendingApps, setPendingApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const [statesRes, districtsRes, panchayathsRes, areasRes, wardsRes, ordersRes, itemsRes, rolesRes, categoriesRes] = await Promise.all([
+      const [statesRes, districtsRes, panchayathsRes, areasRes, wardsRes, ordersRes, itemsRes, rolesRes, categoriesRes, orderRowsRes, settlementsRes, appsRes] = await Promise.all([
         supabase.from("states").select("id", { count: "exact", head: true }),
         supabase.from("districts").select("id", { count: "exact", head: true }),
         supabase.from("panchayaths").select("id", { count: "exact", head: true }),
@@ -50,6 +54,9 @@ const DashboardHome = () => {
         supabase.from("items").select("id", { count: "exact", head: true }),
         supabase.from("user_roles").select("role"),
         supabase.from("categories").select("name, commission_rate").order("name"),
+        supabase.from("orders").select("order_number, status, total_amount, commission_amount, delivery_charge, created_at").order("created_at", { ascending: false }),
+        supabase.from("settlements").select("amount, status").eq("status", "pending"),
+        supabase.from("vendor_applications").select("id, full_name, mobile, requested_role, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
       ]);
 
       const roles = rolesRes.data || [];
@@ -59,6 +66,20 @@ const DashboardHome = () => {
         admins: roles.filter(r => r.role === "admin").length, owners: roles.filter(r => r.role === "owner").length,
         delivery: roles.filter(r => r.role === "delivery").length, customers: roles.filter(r => r.role === "customer").length,
       });
+
+      const orderRows = orderRowsRes.data || [];
+      setRevenue({
+        gross: orderRows.reduce((a, o) => a + Number(o.total_amount || 0), 0),
+        commission: orderRows.reduce((a, o) => a + Number(o.commission_amount || 0), 0),
+        delivery: orderRows.reduce((a, o) => a + Number(o.delivery_charge || 0), 0),
+        pendingSettlement: (settlementsRes.data || []).reduce((a, s) => a + Number(s.amount || 0), 0),
+      });
+      setStatusCounts(orderRows.reduce((acc: Record<string, number>, o) => {
+        acc[o.status] = (acc[o.status] || 0) + 1;
+        return acc;
+      }, {}));
+      setRecentOrders(orderRows.slice(0, 5));
+      setPendingApps(appsRes.data || []);
       setCategories(categoriesRes.data || []);
       setLoading(false);
     };
