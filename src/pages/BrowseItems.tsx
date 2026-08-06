@@ -1,10 +1,35 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Heart, MapPin, SlidersHorizontal } from "lucide-react";
+import {
+  Loader2, Heart, MapPin, SlidersHorizontal, LayoutGrid, Sofa, Camera, Wrench,
+  Shirt, Laptop, Bike, PartyPopper, Baby, Dumbbell, Music, Tent, BookOpen, Utensils, Package,
+} from "lucide-react";
 import MarketHeader from "@/components/MarketHeader";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+const CATEGORY_ICONS: { match: string[]; icon: typeof Package }[] = [
+  { match: ["furniture", "sofa", "home", "house"], icon: Sofa },
+  { match: ["camera", "photo", "video", "drone"], icon: Camera },
+  { match: ["tool", "hardware", "construction", "power"], icon: Wrench },
+  { match: ["cloth", "dress", "fashion", "wear", "costume"], icon: Shirt },
+  { match: ["electronic", "laptop", "computer", "gadget", "appliance"], icon: Laptop },
+  { match: ["vehicle", "bike", "cycle", "car", "scooter"], icon: Bike },
+  { match: ["event", "party", "decor", "wedding", "tent house"], icon: PartyPopper },
+  { match: ["baby", "kid", "child", "toy"], icon: Baby },
+  { match: ["sport", "fitness", "gym"], icon: Dumbbell },
+  { match: ["music", "instrument", "sound", "audio"], icon: Music },
+  { match: ["camp", "outdoor", "travel", "tent"], icon: Tent },
+  { match: ["book", "study", "education"], icon: BookOpen },
+  { match: ["kitchen", "cook", "catering", "utensil"], icon: Utensils },
+];
+
+const getCategoryIcon = (name: string) => {
+  const lower = (name || "").toLowerCase();
+  return CATEGORY_ICONS.find(c => c.match.some(m => lower.includes(m)))?.icon || Package;
+};
+
 
 const BrowseItems = () => {
   const navigate = useNavigate();
