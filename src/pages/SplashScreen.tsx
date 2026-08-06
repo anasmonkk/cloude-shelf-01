@@ -13,34 +13,6 @@ const SplashScreen = () => {
     return () => clearTimeout(timer);
   }, [navigate]);
 
-  const floatingVariants = {
-    animate: (i: number) => ({
-      y: [0, -20, 0],
-      opacity: [0.3, 0.7, 0.3],
-      scale: [1, 1.1, 1],
-      transition: {
-        duration: 3 + i * 0.5,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay: i * 0.3,
-      },
-    }),
-  };
-
-  const ringVariants = {
-    initial: { scale: 0.8, opacity: 0 },
-    animate: (i: number) => ({
-      scale: [0.8, 1.4, 1.6],
-      opacity: [0, 0.4, 0],
-      transition: {
-        duration: 2,
-        repeat: Infinity,
-        ease: "easeOut",
-        delay: i * 0.6,
-      },
-    }),
-  };
-
   return (
     <div className="relative min-h-screen bg-background overflow-hidden flex flex-col items-center justify-center">
       {/* Animated background gradient */}
@@ -55,10 +27,18 @@ const SplashScreen = () => {
       {[...Array(6)].map((_, i) => (
         <motion.div
           key={i}
-          custom={i}
-          variants={floatingVariants}
-          initial="initial"
-          animate="animate"
+          initial={{ opacity: 0 }}
+          animate={{
+            y: [0, -20, 0],
+            opacity: [0.15, 0.35, 0.15],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 3 + i * 0.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: i * 0.3,
+          }}
           className="absolute rounded-full bg-primary/10 blur-2xl"
           style={{
             width: `${80 + i * 40}px`,
@@ -74,10 +54,17 @@ const SplashScreen = () => {
         {[...Array(3)].map((_, i) => (
           <motion.div
             key={i}
-            custom={i}
-            variants={ringVariants}
-            initial="initial"
-            animate="animate"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{
+              scale: [0.8, 1.4, 1.6],
+              opacity: [0, 0.4, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeOut",
+              delay: i * 0.6,
+            }}
             className="absolute rounded-full border-2 border-primary/30"
             style={{ width: "300px", height: "300px" }}
           />
