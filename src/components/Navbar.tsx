@@ -7,13 +7,26 @@ import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const isBrowsePage = location.pathname === "/browse";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Cloud Shelf" className="h-9 w-auto" />
-        </Link>
+        <div className="flex items-center gap-3">
+          {!isBrowsePage && (
+            <Link
+              to="/home"
+              aria-label="Back to home"
+              className="flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          )}
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="Cloud Shelf" className="h-9 w-auto" />
+          </Link>
+        </div>
 
         <div className="hidden md:flex items-center gap-6">
           <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors font-body text-sm font-medium">
