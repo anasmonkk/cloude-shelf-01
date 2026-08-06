@@ -79,6 +79,7 @@ const OwnerItems = () => {
       image_url_1: item.image_urls?.[0] || "",
       image_url_2: item.image_urls?.[1] || "",
       image_url_3: item.image_urls?.[2] || "",
+      video_url: item.video_url || "",
     });
     setDialogOpen(true);
   };
@@ -105,6 +106,7 @@ const OwnerItems = () => {
       category_id: form.category_id,
       image_urls: urls,
       payment_type: form.payment_type,
+      video_url: form.video_url.trim() || null,
     };
 
     let error;
@@ -209,6 +211,14 @@ const OwnerItems = () => {
             <div>
               <Label>Image URL 3 *</Label>
               <Input value={form.image_url_3} onChange={e => setForm(f => ({ ...f, image_url_3: e.target.value }))} />
+            </div>
+            <div>
+              <Label>YouTube Video Link (optional)</Label>
+              <Input
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={form.video_url}
+                onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
+              />
             </div>
             <Button onClick={handleSubmit} disabled={submitting} className="w-full">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
