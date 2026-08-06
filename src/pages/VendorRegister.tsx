@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import Navbar from "@/components/Navbar";
 
 const VENDOR_DEFAULT_PASSWORD = "cloudshelf_vendor_2024";
 
@@ -102,7 +103,8 @@ const VendorRegister = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 pt-24 py-12">
+      <Navbar />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
