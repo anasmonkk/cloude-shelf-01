@@ -16,8 +16,8 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           {!isBrowsePage && (
             <Link
-              to="/home"
-              aria-label="Back to home"
+              to="/browse"
+              aria-label="Back to browse"
               className="flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
