@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Globe, MapPin, Percent, BarChart3, Users, Settings, Package, ShoppingCart, Truck, Layers, Loader2 } from "lucide-react";
+import { Globe, MapPin, Percent, BarChart3, Users, Settings, Package, ShoppingCart, Truck, Layers, Loader2, CreditCard, UserCog, IndianRupee } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,24 +11,24 @@ import SAAreas from "./superadmin/SAAreas";
 import SACommission from "./superadmin/SACommission";
 import SAAdmins from "./superadmin/SAAdmins";
 import SASettings from "./superadmin/SASettings";
-
-const navItems = [
-  { label: "Dashboard", path: "/superadmin", icon: <BarChart3 className="h-4 w-4" /> },
-  { label: "States & Districts", path: "/superadmin/locations", icon: <Globe className="h-4 w-4" /> },
-  { label: "Panchayaths", path: "/superadmin/panchayaths", icon: <MapPin className="h-4 w-4" /> },
-  { label: "Areas", path: "/superadmin/areas", icon: <MapPin className="h-4 w-4" /> },
-  { label: "Commission", path: "/superadmin/commission", icon: <Percent className="h-4 w-4" /> },
-  { label: "Admin Accounts", path: "/superadmin/admins", icon: <Users className="h-4 w-4" /> },
-  { label: "Settings", path: "/superadmin/settings", icon: <Settings className="h-4 w-4" /> },
-];
+import SAUsers from "./superadmin/SAUsers";
+import SAOrders from "./superadmin/SAOrders";
+import SAItems from "./superadmin/SAItems";
+import SAPayments from "./superadmin/SAPayments";
+import SAWards from "./superadmin/SAWards";
 
 const pageTitles: Record<string, string> = {
   "/superadmin": "Super Admin Dashboard",
   "/superadmin/locations": "States & Districts",
   "/superadmin/panchayaths": "Panchayaths",
   "/superadmin/areas": "Areas",
+  "/superadmin/wards": "Wards",
   "/superadmin/commission": "Commission Rates",
   "/superadmin/admins": "Admin Accounts",
+  "/superadmin/users": "All Users",
+  "/superadmin/orders": "Orders",
+  "/superadmin/items": "Items",
+  "/superadmin/payments": "Payments & Settlements",
   "/superadmin/settings": "Settings",
 };
 
@@ -36,11 +36,15 @@ const pageTitles: Record<string, string> = {
 const DashboardHome = () => {
   const [stats, setStats] = useState({ states: 0, districts: 0, panchayaths: 0, areas: 0, wards: 0, orders: 0, items: 0, admins: 0, owners: 0, delivery: 0, customers: 0 });
   const [categories, setCategories] = useState<any[]>([]);
+  const [revenue, setRevenue] = useState({ gross: 0, commission: 0, delivery: 0, pendingSettlement: 0 });
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [pendingApps, setPendingApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const [statesRes, districtsRes, panchayathsRes, areasRes, wardsRes, ordersRes, itemsRes, rolesRes, categoriesRes] = await Promise.all([
+      const [statesRes, districtsRes, panchayathsRes, areasRes, wardsRes, ordersRes, itemsRes, rolesRes, categoriesRes, orderRowsRes, settlementsRes, appsRes] = await Promise.all([
         supabase.from("states").select("id", { count: "exact", head: true }),
         supabase.from("districts").select("id", { count: "exact", head: true }),
         supabase.from("panchayaths").select("id", { count: "exact", head: true }),
@@ -50,6 +54,9 @@ const DashboardHome = () => {
         supabase.from("items").select("id", { count: "exact", head: true }),
         supabase.from("user_roles").select("role"),
         supabase.from("categories").select("name, commission_rate").order("name"),
+        supabase.from("orders").select("order_number, status, total_amount, commission_amount, delivery_charge, created_at").order("created_at", { ascending: false }),
+        supabase.from("settlements").select("amount, status").eq("status", "pending"),
+        supabase.from("vendor_applications").select("id, full_name, mobile, requested_role, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
       ]);
 
       const roles = rolesRes.data || [];
@@ -59,6 +66,20 @@ const DashboardHome = () => {
         admins: roles.filter(r => r.role === "admin").length, owners: roles.filter(r => r.role === "owner").length,
         delivery: roles.filter(r => r.role === "delivery").length, customers: roles.filter(r => r.role === "customer").length,
       });
+
+      const orderRows = orderRowsRes.data || [];
+      setRevenue({
+        gross: orderRows.reduce((a, o) => a + Number(o.total_amount || 0), 0),
+        commission: orderRows.reduce((a, o) => a + Number(o.commission_amount || 0), 0),
+        delivery: orderRows.reduce((a, o) => a + Number(o.delivery_charge || 0), 0),
+        pendingSettlement: (settlementsRes.data || []).reduce((a, s) => a + Number(s.amount || 0), 0),
+      });
+      setStatusCounts(orderRows.reduce((acc: Record<string, number>, o) => {
+        acc[o.status] = (acc[o.status] || 0) + 1;
+        return acc;
+      }, {}));
+      setRecentOrders(orderRows.slice(0, 5));
+      setPendingApps(appsRes.data || []);
       setCategories(categoriesRes.data || []);
       setLoading(false);
     };
@@ -120,6 +141,83 @@ const DashboardHome = () => {
       </div>
 
       {/* Commission summary */}
+      <div>
+        <h2 className="text-sm font-body font-medium text-muted-foreground uppercase tracking-wider mb-3">Revenue</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Gross Order Value", value: revenue.gross },
+            { label: "Platform Commission", value: revenue.commission },
+            { label: "Delivery Charges", value: revenue.delivery },
+            { label: "Pending Settlement", value: revenue.pendingSettlement },
+          ].map(s => (
+            <Card key={s.label} className="shadow-card">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <IndianRupee className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-body truncate">{s.label}</p>
+                  <p className="text-lg font-display font-bold text-foreground">₹{s.value.toLocaleString("en-IN")}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-base">Orders by Status</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {Object.keys(statusCounts).length === 0 && <p className="text-sm text-muted-foreground">No orders yet</p>}
+            {Object.entries(statusCounts).map(([s, c]) => (
+              <Badge key={s} variant="secondary" className="capitalize">{s.replace(/_/g, " ")}: {c}</Badge>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="font-display text-base">Recent Orders</CardTitle>
+            <Link to="/superadmin/orders" className="text-xs text-primary font-body">View all</Link>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {recentOrders.length === 0 && <p className="text-sm text-muted-foreground">No orders yet</p>}
+            {recentOrders.map(o => (
+              <div key={o.order_number} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary">
+                <div>
+                  <p className="text-sm font-display font-medium text-foreground">{o.order_number}</p>
+                  <p className="text-xs text-muted-foreground font-body capitalize">{String(o.status).replace(/_/g, " ")}</p>
+                </div>
+                <span className="text-sm font-display font-semibold">₹{Number(o.total_amount).toLocaleString("en-IN")}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="shadow-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display text-base">Pending Registrations ({pendingApps.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {pendingApps.length === 0 && <p className="text-sm text-muted-foreground">No pending registrations</p>}
+          {pendingApps.map(a => (
+            <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary">
+              <div>
+                <p className="text-sm font-display font-medium text-foreground">{a.full_name}</p>
+                <p className="text-xs text-muted-foreground font-body">{a.mobile}</p>
+              </div>
+              <Badge variant="secondary" className="capitalize">
+                {a.requested_role === "owner" ? "Vendor" : String(a.requested_role).replace(/_/g, " ")}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       <Card className="shadow-card max-w-md">
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-base flex items-center gap-2"><Percent className="h-4 w-4 text-primary" /> Commission Rates</CardTitle>
@@ -140,14 +238,82 @@ const DashboardHome = () => {
 
 const SuperAdminDashboard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const path = location.pathname;
   const title = pageTitles[path] || "Super Admin Dashboard";
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate("/login/superadmin", { replace: true });
+        return;
+      }
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "super_admin")
+        .maybeSingle();
+      if (!roleData) {
+        await supabase.auth.signOut();
+        navigate("/login/superadmin", { replace: true });
+        return;
+      }
+      setAuthChecked(true);
+      const { count } = await supabase
+        .from("vendor_applications")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      setPendingCount(count || 0);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setAuthChecked(false);
+        navigate("/login/superadmin", { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const navItems = [
+    { label: "Dashboard", path: "/superadmin", icon: <BarChart3 className="h-4 w-4" /> },
+    { label: "States & Districts", path: "/superadmin/locations", icon: <Globe className="h-4 w-4" /> },
+    { label: "Panchayaths", path: "/superadmin/panchayaths", icon: <MapPin className="h-4 w-4" /> },
+    { label: "Wards", path: "/superadmin/wards", icon: <Layers className="h-4 w-4" /> },
+    { label: "Areas", path: "/superadmin/areas", icon: <MapPin className="h-4 w-4" /> },
+    { label: "Users", path: "/superadmin/users", icon: <UserCog className="h-4 w-4" />, badge: pendingCount },
+    { label: "Orders", path: "/superadmin/orders", icon: <ShoppingCart className="h-4 w-4" /> },
+    { label: "Items", path: "/superadmin/items", icon: <Package className="h-4 w-4" /> },
+    { label: "Payments", path: "/superadmin/payments", icon: <CreditCard className="h-4 w-4" /> },
+    { label: "Commission", path: "/superadmin/commission", icon: <Percent className="h-4 w-4" /> },
+    { label: "Admin Accounts", path: "/superadmin/admins", icon: <Users className="h-4 w-4" /> },
+    { label: "Settings", path: "/superadmin/settings", icon: <Settings className="h-4 w-4" /> },
+  ];
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (path) {
       case "/superadmin/locations": return <SALocations />;
       case "/superadmin/panchayaths": return <SAPanchayaths />;
+      case "/superadmin/wards": return <SAWards />;
       case "/superadmin/areas": return <SAAreas />;
+      case "/superadmin/users": return <SAUsers />;
+      case "/superadmin/orders": return <SAOrders />;
+      case "/superadmin/items": return <SAItems />;
+      case "/superadmin/payments": return <SAPayments />;
       case "/superadmin/commission": return <SACommission />;
       case "/superadmin/admins": return <SAAdmins />;
       case "/superadmin/settings": return <SASettings />;
