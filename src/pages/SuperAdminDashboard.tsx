@@ -141,6 +141,83 @@ const DashboardHome = () => {
       </div>
 
       {/* Commission summary */}
+      <div>
+        <h2 className="text-sm font-body font-medium text-muted-foreground uppercase tracking-wider mb-3">Revenue</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Gross Order Value", value: revenue.gross },
+            { label: "Platform Commission", value: revenue.commission },
+            { label: "Delivery Charges", value: revenue.delivery },
+            { label: "Pending Settlement", value: revenue.pendingSettlement },
+          ].map(s => (
+            <Card key={s.label} className="shadow-card">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <IndianRupee className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-body truncate">{s.label}</p>
+                  <p className="text-lg font-display font-bold text-foreground">₹{s.value.toLocaleString("en-IN")}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-base">Orders by Status</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {Object.keys(statusCounts).length === 0 && <p className="text-sm text-muted-foreground">No orders yet</p>}
+            {Object.entries(statusCounts).map(([s, c]) => (
+              <Badge key={s} variant="secondary" className="capitalize">{s.replace(/_/g, " ")}: {c}</Badge>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="font-display text-base">Recent Orders</CardTitle>
+            <Link to="/superadmin/orders" className="text-xs text-primary font-body">View all</Link>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {recentOrders.length === 0 && <p className="text-sm text-muted-foreground">No orders yet</p>}
+            {recentOrders.map(o => (
+              <div key={o.order_number} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary">
+                <div>
+                  <p className="text-sm font-display font-medium text-foreground">{o.order_number}</p>
+                  <p className="text-xs text-muted-foreground font-body capitalize">{String(o.status).replace(/_/g, " ")}</p>
+                </div>
+                <span className="text-sm font-display font-semibold">₹{Number(o.total_amount).toLocaleString("en-IN")}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="shadow-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display text-base">Pending Registrations ({pendingApps.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {pendingApps.length === 0 && <p className="text-sm text-muted-foreground">No pending registrations</p>}
+          {pendingApps.map(a => (
+            <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary">
+              <div>
+                <p className="text-sm font-display font-medium text-foreground">{a.full_name}</p>
+                <p className="text-xs text-muted-foreground font-body">{a.mobile}</p>
+              </div>
+              <Badge variant="secondary" className="capitalize">
+                {a.requested_role === "owner" ? "Vendor" : String(a.requested_role).replace(/_/g, " ")}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       <Card className="shadow-card max-w-md">
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-base flex items-center gap-2"><Percent className="h-4 w-4 text-primary" /> Commission Rates</CardTitle>
@@ -161,14 +238,82 @@ const DashboardHome = () => {
 
 const SuperAdminDashboard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const path = location.pathname;
   const title = pageTitles[path] || "Super Admin Dashboard";
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate("/login/superadmin", { replace: true });
+        return;
+      }
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "super_admin")
+        .maybeSingle();
+      if (!roleData) {
+        await supabase.auth.signOut();
+        navigate("/login/superadmin", { replace: true });
+        return;
+      }
+      setAuthChecked(true);
+      const { count } = await supabase
+        .from("vendor_applications")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      setPendingCount(count || 0);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setAuthChecked(false);
+        navigate("/login/superadmin", { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const navItems = [
+    { label: "Dashboard", path: "/superadmin", icon: <BarChart3 className="h-4 w-4" /> },
+    { label: "States & Districts", path: "/superadmin/locations", icon: <Globe className="h-4 w-4" /> },
+    { label: "Panchayaths", path: "/superadmin/panchayaths", icon: <MapPin className="h-4 w-4" /> },
+    { label: "Wards", path: "/superadmin/wards", icon: <Layers className="h-4 w-4" /> },
+    { label: "Areas", path: "/superadmin/areas", icon: <MapPin className="h-4 w-4" /> },
+    { label: "Users", path: "/superadmin/users", icon: <UserCog className="h-4 w-4" />, badge: pendingCount },
+    { label: "Orders", path: "/superadmin/orders", icon: <ShoppingCart className="h-4 w-4" /> },
+    { label: "Items", path: "/superadmin/items", icon: <Package className="h-4 w-4" /> },
+    { label: "Payments", path: "/superadmin/payments", icon: <CreditCard className="h-4 w-4" /> },
+    { label: "Commission", path: "/superadmin/commission", icon: <Percent className="h-4 w-4" /> },
+    { label: "Admin Accounts", path: "/superadmin/admins", icon: <Users className="h-4 w-4" /> },
+    { label: "Settings", path: "/superadmin/settings", icon: <Settings className="h-4 w-4" /> },
+  ];
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (path) {
       case "/superadmin/locations": return <SALocations />;
       case "/superadmin/panchayaths": return <SAPanchayaths />;
+      case "/superadmin/wards": return <SAWards />;
       case "/superadmin/areas": return <SAAreas />;
+      case "/superadmin/users": return <SAUsers />;
+      case "/superadmin/orders": return <SAOrders />;
+      case "/superadmin/items": return <SAItems />;
+      case "/superadmin/payments": return <SAPayments />;
       case "/superadmin/commission": return <SACommission />;
       case "/superadmin/admins": return <SAAdmins />;
       case "/superadmin/settings": return <SASettings />;
