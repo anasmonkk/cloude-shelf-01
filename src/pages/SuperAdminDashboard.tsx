@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Globe, MapPin, Percent, BarChart3, Users, Settings, Package, ShoppingCart, Truck, Layers, Loader2 } from "lucide-react";
+import { Globe, MapPin, Percent, BarChart3, Users, Settings, Package, ShoppingCart, Truck, Layers, Loader2, CreditCard, UserCog, IndianRupee } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,24 +11,24 @@ import SAAreas from "./superadmin/SAAreas";
 import SACommission from "./superadmin/SACommission";
 import SAAdmins from "./superadmin/SAAdmins";
 import SASettings from "./superadmin/SASettings";
-
-const navItems = [
-  { label: "Dashboard", path: "/superadmin", icon: <BarChart3 className="h-4 w-4" /> },
-  { label: "States & Districts", path: "/superadmin/locations", icon: <Globe className="h-4 w-4" /> },
-  { label: "Panchayaths", path: "/superadmin/panchayaths", icon: <MapPin className="h-4 w-4" /> },
-  { label: "Areas", path: "/superadmin/areas", icon: <MapPin className="h-4 w-4" /> },
-  { label: "Commission", path: "/superadmin/commission", icon: <Percent className="h-4 w-4" /> },
-  { label: "Admin Accounts", path: "/superadmin/admins", icon: <Users className="h-4 w-4" /> },
-  { label: "Settings", path: "/superadmin/settings", icon: <Settings className="h-4 w-4" /> },
-];
+import SAUsers from "./superadmin/SAUsers";
+import SAOrders from "./superadmin/SAOrders";
+import SAItems from "./superadmin/SAItems";
+import SAPayments from "./superadmin/SAPayments";
+import SAWards from "./superadmin/SAWards";
 
 const pageTitles: Record<string, string> = {
   "/superadmin": "Super Admin Dashboard",
   "/superadmin/locations": "States & Districts",
   "/superadmin/panchayaths": "Panchayaths",
   "/superadmin/areas": "Areas",
+  "/superadmin/wards": "Wards",
   "/superadmin/commission": "Commission Rates",
   "/superadmin/admins": "Admin Accounts",
+  "/superadmin/users": "All Users",
+  "/superadmin/orders": "Orders",
+  "/superadmin/items": "Items",
+  "/superadmin/payments": "Payments & Settlements",
   "/superadmin/settings": "Settings",
 };
 
