@@ -14,8 +14,12 @@ import logo from "@/assets/logo.png";
 const CUSTOMER_DEFAULT_PASSWORD = "cloudshelf_customer_2024";
 
 const Register = () => {
+  const [searchParams] = useSearchParams();
+  const prefillMobile = (searchParams.get("mobile") || "").replace(/\D/g, "").slice(0, 10);
+  const redirectTo = searchParams.get("redirect");
+
   const [name, setName] = useState("");
-  const [mobile, setMobile] = useState("");
+  const [mobile, setMobile] = useState(prefillMobile);
   const [stateId, setStateId] = useState("");
   const [districtId, setDistrictId] = useState("");
   const [panchayathId, setPanchayathId] = useState("");
@@ -29,6 +33,7 @@ const Register = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+
 
   useEffect(() => {
     supabase.from("states").select("id, name").then(({ data }) => {
