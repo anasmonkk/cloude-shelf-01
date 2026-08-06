@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -220,40 +220,82 @@ const ItemDetail = () => {
           </button>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Image Gallery */}
+            {/* Media carousel */}
             <div className="space-y-3">
-              <div className="aspect-square bg-muted rounded-xl overflow-hidden relative">
-                {images.length > 0 ? (
-                  <img src={images[currentImage]} alt={item.name} className="w-full h-full object-cover" />
-                ) : (
+              <div
+                className="aspect-square bg-muted rounded-xl overflow-hidden relative group"
+                onMouseEnter={() => setPaused(true)}
+                onMouseLeave={() => setPaused(false)}
+              >
+                {slides.length === 0 ? (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-body">No image</div>
+                ) : (
+                  slides.map((slide, idx) => (
+                    <div
+                      key={idx}
+                      className={`absolute inset-0 transition-opacity duration-700 ${idx === currentImage % slides.length ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                    >
+                      {slide.type === "image" ? (
+                        <img src={slide.src} alt={`${item.name} photo ${idx + 1}`} className="w-full h-full object-cover" />
+                      ) : (
+                        <iframe
+                          src={`https://www.youtube.com/embed/${slide.src}`}
+                          title={`${item.name} video`}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full"
+                        />
+                      )}
+                    </div>
+                  ))
                 )}
-                {images.length > 1 && (
+
+                {slides.length > 1 && (
                   <>
                     <button
-                      onClick={() => setCurrentImage((prev) => (prev - 1 + images.length) % images.length)}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-card transition-colors"
+                      aria-label="Previous"
+                      onClick={() => setCurrentImage((prev) => (prev - 1 + slides.length) % slides.length)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-card/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-card transition-colors"
                     >
                       <ChevronLeft className="h-5 w-5 text-foreground" />
                     </button>
                     <button
-                      onClick={() => setCurrentImage((prev) => (prev + 1) % images.length)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-card transition-colors"
+                      aria-label="Next"
+                      onClick={() => setCurrentImage((prev) => (prev + 1) % slides.length)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-card/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-card transition-colors"
                     >
                       <ChevronRight className="h-5 w-5 text-foreground" />
                     </button>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+                      {slides.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`h-1.5 rounded-full transition-all ${idx === currentImage % slides.length ? "w-4 bg-primary" : "w-1.5 bg-card/70"}`}
+                        />
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
-              {images.length > 1 && (
+
+              {slides.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto">
-                  {images.map((img, idx) => (
+                  {slides.map((slide, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentImage(idx)}
-                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-colors ${idx === currentImage ? "border-primary" : "border-transparent"}`}
+                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-colors relative ${idx === currentImage % slides.length ? "border-primary" : "border-transparent"}`}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      {slide.type === "image" ? (
+                        <img src={slide.src} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <img src={`https://img.youtube.com/vi/${slide.src}/mqdefault.jpg`} alt="" className="w-full h-full object-cover" />
+                          <span className="absolute inset-0 grid place-items-center bg-foreground/30">
+                            <Play className="h-5 w-5 text-primary-foreground" />
+                          </span>
+                        </>
+                      )}
                     </button>
                   ))}
                 </div>
