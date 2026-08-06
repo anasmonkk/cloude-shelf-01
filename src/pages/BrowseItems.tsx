@@ -141,7 +141,7 @@ const BrowseItems = () => {
                     <div className="p-4 space-y-3">
                       <div>
                         <h3 className="font-display font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{item.name}</h3>
-                        <p className="text-xs text-muted-foreground font-body">{item.vendor_name}</p>
+                        {item.vendor_name && <p className="text-xs text-muted-foreground font-body">{item.vendor_name}</p>}
                       </div>
                       <div className="space-y-1 text-xs font-body">
                         <div className="flex justify-between">
