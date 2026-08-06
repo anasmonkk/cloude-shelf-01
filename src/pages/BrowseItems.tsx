@@ -66,7 +66,8 @@ const BrowseItems = () => {
 
   const filtered = items.filter(item => {
     const matchesCategory = selectedCategory === "All" || (item.categories as any)?.name === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.vendor_name.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchesSearch = item.name.toLowerCase().includes(q) || (item.vendor_name || "").toLowerCase().includes(q);
     return matchesCategory && matchesSearch;
   });
 
