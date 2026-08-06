@@ -59,6 +59,16 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        market: {
+          header: "hsl(var(--market-header))",
+          "header-foreground": "hsl(var(--market-header-foreground))",
+          strip: "hsl(var(--market-strip))",
+          "strip-foreground": "hsl(var(--market-strip-foreground))",
+        },
+        highlight: {
+          DEFAULT: "hsl(var(--highlight))",
+          foreground: "hsl(var(--highlight-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
