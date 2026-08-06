@@ -83,7 +83,8 @@ const Register = () => {
       if (error) throw error;
 
       toast({ title: "Account created!", description: "You can now login with your mobile number." });
-      navigate("/login");
+      navigate(`/login?mobile=${mobile}${redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ""}`);
+
     } catch (error: any) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
     } finally {
