@@ -1,10 +1,35 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Heart, MapPin, SlidersHorizontal } from "lucide-react";
+import {
+  Loader2, Heart, MapPin, SlidersHorizontal, LayoutGrid, Sofa, Camera, Wrench,
+  Shirt, Laptop, Bike, PartyPopper, Baby, Dumbbell, Music, Tent, BookOpen, Utensils, Package,
+} from "lucide-react";
 import MarketHeader from "@/components/MarketHeader";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+const CATEGORY_ICONS: { match: string[]; icon: typeof Package }[] = [
+  { match: ["furniture", "sofa", "home", "house"], icon: Sofa },
+  { match: ["camera", "photo", "video", "drone"], icon: Camera },
+  { match: ["tool", "hardware", "construction", "power"], icon: Wrench },
+  { match: ["cloth", "dress", "fashion", "wear", "costume"], icon: Shirt },
+  { match: ["electronic", "laptop", "computer", "gadget", "appliance"], icon: Laptop },
+  { match: ["vehicle", "bike", "cycle", "car", "scooter"], icon: Bike },
+  { match: ["event", "party", "decor", "wedding", "tent house"], icon: PartyPopper },
+  { match: ["baby", "kid", "child", "toy"], icon: Baby },
+  { match: ["sport", "fitness", "gym"], icon: Dumbbell },
+  { match: ["music", "instrument", "sound", "audio"], icon: Music },
+  { match: ["camp", "outdoor", "travel", "tent"], icon: Tent },
+  { match: ["book", "study", "education"], icon: BookOpen },
+  { match: ["kitchen", "cook", "catering", "utensil"], icon: Utensils },
+];
+
+const getCategoryIcon = (name: string) => {
+  const lower = (name || "").toLowerCase();
+  return CATEGORY_ICONS.find(c => c.match.some(m => lower.includes(m)))?.icon || Package;
+};
+
 
 const BrowseItems = () => {
   const navigate = useNavigate();
@@ -86,27 +111,35 @@ const BrowseItems = () => {
         <div className="container flex items-center gap-2 overflow-x-auto py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => setSelectedCategory("All")}
-            className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-display font-semibold border transition-colors ${
+            className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-display font-semibold border transition-colors ${
               selectedCategory === "All"
                 ? "bg-market-header text-market-header-foreground border-market-header"
                 : "bg-card text-market-strip-foreground border-border"
             }`}
           >
+            <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
             ALL CATEGORIES
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.name)}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-body whitespace-nowrap border transition-colors ${
-                selectedCategory === cat.name
-                  ? "bg-market-header text-market-header-foreground border-market-header"
-                  : "bg-card text-market-strip-foreground border-border"
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const Icon = getCategoryIcon(cat.name);
+            const active = selectedCategory === cat.name;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.name)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-body whitespace-nowrap border transition-colors ${
+                  active
+                    ? "bg-market-header text-market-header-foreground border-market-header"
+                    : "bg-card text-market-strip-foreground border-border"
+                }`}
+              >
+                <span className={`grid place-items-center h-5 w-5 rounded-full shrink-0 ${active ? "bg-market-header-foreground/20" : "bg-muted"}`}>
+                  <Icon className={`h-3 w-3 ${active ? "" : "text-primary"}`} />
+                </span>
+                {cat.name}
+              </button>
+            );
+          })}
         </div>
       </div>
 

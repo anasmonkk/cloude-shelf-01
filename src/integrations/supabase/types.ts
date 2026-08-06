@@ -199,6 +199,7 @@ export type Database = {
           payment_type: string
           status: Database["public"]["Enums"]["item_status"]
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           area_id?: string | null
@@ -213,6 +214,7 @@ export type Database = {
           payment_type?: string
           status?: Database["public"]["Enums"]["item_status"]
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           area_id?: string | null
@@ -227,6 +229,7 @@ export type Database = {
           payment_type?: string
           status?: Database["public"]["Enums"]["item_status"]
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
