@@ -40,6 +40,14 @@
     --input: 210 15% 90%;
     --ring: 210 70% 50%;
 
+    /* Marketplace (OLX-style) surfaces */
+    --market-header: 184 100% 10%;
+    --market-header-foreground: 0 0% 100%;
+    --market-strip: 184 60% 96%;
+    --market-strip-foreground: 184 100% 14%;
+    --highlight: 45 100% 60%;
+    --highlight-foreground: 184 100% 10%;
+
     --radius: 0.75rem;
 
     --sidebar-background: 215 25% 14%;
