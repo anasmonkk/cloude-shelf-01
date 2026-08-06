@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Search, MapPin, Heart, ChevronDown } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/cloud-shelf-logo.png.asset.json";
 
 interface MarketHeaderProps {
   search: string;
@@ -17,7 +17,7 @@ const MarketHeader = ({ search, onSearchChange, location = "All India" }: Market
         {/* Top row */}
         <div className="flex items-center gap-3">
           <Link to="/" className="shrink-0">
-            <img src={logo} alt="Cloud Shelf" className="h-8 w-auto brightness-0 invert" />
+            <img src={logo.url} alt="Cloud Shelf" className="h-8 w-auto brightness-0 invert" />
           </Link>
 
           {/* Location picker */}

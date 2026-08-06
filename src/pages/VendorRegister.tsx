@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/cloud-shelf-logo.png.asset.json";
 import Navbar from "@/components/Navbar";
 
 const VENDOR_DEFAULT_PASSWORD = "cloudshelf_vendor_2024";
@@ -112,7 +112,7 @@ const VendorRegister = () => {
       >
         <div className="text-center mb-8">
           <Link to="/" className="inline-block mb-4">
-            <img src={logo} alt="Cloud Shelf" className="h-16 w-auto mx-auto" />
+            <img src={logo.url} alt="Cloud Shelf" className="h-16 w-auto mx-auto" />
           </Link>
           <p className="text-muted-foreground font-body">Register as a vendor to list your products for rent</p>
         </div>
