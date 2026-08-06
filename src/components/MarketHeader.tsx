@@ -51,7 +51,7 @@ const MarketHeader = ({ search, onSearchChange, location = "All India" }: Market
               Login
             </button>
             <button
-              onClick={() => navigate("/vendor-register")}
+              onClick={() => navigate("/register/vendor")}
               className="hidden sm:inline-flex items-center gap-1 rounded-full bg-card text-card-foreground px-4 h-9 text-sm font-display font-bold border-2 border-highlight"
             >
               + SELL
