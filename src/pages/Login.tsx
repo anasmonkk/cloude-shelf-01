@@ -141,6 +141,26 @@ const Login = () => {
           </p>
         </form>
 
+        <AlertDialog open={notRegistered} onOpenChange={setNotRegistered}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 font-display">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Mobile number not registered
+              </AlertDialogTitle>
+              <AlertDialogDescription className="font-body">
+                {mobile} is not registered yet. Create a free customer account to continue renting items.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="font-body">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={goToSignUp} className="font-display">Sign Up Now</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+
+
         {/* Other Role Links */}
         <div className="mt-6 bg-card rounded-xl border border-border p-5 shadow-card">
           <p className="text-xs font-body text-muted-foreground text-center mb-3 uppercase tracking-wider font-medium">Other Logins</p>
