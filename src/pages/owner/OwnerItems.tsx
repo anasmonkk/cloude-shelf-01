@@ -19,6 +19,7 @@ interface Item {
   owner_price: number;
   status: string;
   image_urls: string[] | null;
+  video_url: string | null;
   category_id: string;
   payment_type: string;
   created_at: string;
@@ -30,7 +31,7 @@ interface Category {
   commission_rate: number;
 }
 
-const emptyForm = { name: "", description: "", owner_price: "", category_id: "", payment_type: "cash_on_delivery", image_url_1: "", image_url_2: "", image_url_3: "" };
+const emptyForm = { name: "", description: "", owner_price: "", category_id: "", payment_type: "cash_on_delivery", image_url_1: "", image_url_2: "", image_url_3: "", video_url: "" };
 
 const OwnerItems = () => {
   const { toast } = useToast();
