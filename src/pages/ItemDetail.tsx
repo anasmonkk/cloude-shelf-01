@@ -28,6 +28,7 @@ const ItemDetail = () => {
   const [deliveryCharge, setDeliveryCharge] = useState(50);
   const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   // Order dialog state
   const [showOrderDialog, setShowOrderDialog] = useState(false);
@@ -63,6 +64,16 @@ const ItemDetail = () => {
     };
     fetchItem();
   }, [id]);
+
+  // Auto-advancing carousel
+  useEffect(() => {
+    if (!item || paused) return;
+    const count = (item.image_urls?.length || 0) + (getYouTubeId(item.video_url) ? 1 : 0);
+    if (count < 2) return;
+    const timer = setInterval(() => setCurrentImage((prev) => (prev + 1) % count), 3500);
+    return () => clearInterval(timer);
+  }, [item, paused]);
+
 
   const handleRentNow = async () => {
     const { data: { session } } = await supabase.auth.getSession();
