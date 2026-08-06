@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/cloud-shelf-logo.png.asset.json";
 
 const Footer = () => {
   return (
@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <img src={logo} alt="Cloud Shelf" className="h-10 w-auto rounded" />
+            <img src={logo.url} alt="Cloud Shelf" className="h-10 w-auto rounded" />
           </div>
           <p className="text-sm text-muted-foreground font-body">
             © 2026 Cloud Shelf. Hyperlocal rental marketplace.

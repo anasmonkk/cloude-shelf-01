@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/cloud-shelf-logo.png.asset.json";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -24,7 +24,7 @@ const Navbar = () => {
             </Link>
           )}
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Cloud Shelf" className="h-9 w-auto" />
+            <img src={logo.url} alt="Cloud Shelf" className="h-9 w-auto" />
           </Link>
         </div>
 
