@@ -12,6 +12,13 @@ import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+const getYouTubeId = (url?: string | null) => {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/))([\w-]{11})/);
+  return match ? match[1] : null;
+};
+
+
 const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -181,7 +188,13 @@ const ItemDetail = () => {
   }
 
   const images: string[] = item.image_urls || [];
+  const videoId = getYouTubeId(item.video_url);
+  const slides: { type: "image" | "video"; src: string }[] = [
+    ...images.map((src) => ({ type: "image" as const, src })),
+    ...(videoId ? [{ type: "video" as const, src: videoId }] : []),
+  ];
   const total = Number(item.owner_price) + deliveryCharge;
+
 
   return (
     <div className="min-h-screen bg-background">
