@@ -1,1 +1,4 @@
 project_id = "jhovayzbpflbixhxffdk"
+
+[functions.admin-create-delivery]
+verify_jwt = true

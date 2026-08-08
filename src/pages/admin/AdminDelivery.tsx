@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Loader2, CheckCircle, XCircle, Users, Bell, Banknote } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Search, Loader2, CheckCircle, XCircle, Users, Bell, Banknote, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +33,9 @@ const AdminDelivery = () => {
   const [flowOrders, setFlowOrders] = useState<any[]>([]);
   const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addOpen, setAddOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ full_name: "", mobile: "", password: "", date_of_birth: "" });
   const { toast } = useToast();
 
   const fetchData = async () => {
@@ -133,6 +138,25 @@ const AdminDelivery = () => {
     const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "delivery");
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Delivery staff removed" });
+    fetchData();
+  };
+
+  const addStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.full_name || form.mobile.length !== 10 || form.password.length < 6) {
+      toast({ title: "Missing details", description: "Enter a name, 10-digit mobile and a password of at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke("admin-create-delivery", { body: form });
+    setSaving(false);
+    if (error || (data as any)?.error) {
+      toast({ title: "Could not add staff", description: (data as any)?.error || error?.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Delivery staff added", description: `${form.full_name} can now log in with mobile ${form.mobile}.` });
+    setForm({ full_name: "", mobile: "", password: "", date_of_birth: "" });
+    setAddOpen(false);
     fetchData();
   };
 
@@ -295,10 +319,43 @@ const AdminDelivery = () => {
         </Card>
       )}
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search delivery staff..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+      {/* Search + Add */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search delivery staff..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button className="font-display font-semibold"><UserPlus className="h-4 w-4 mr-2" /> Add Delivery Staff</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle className="font-display">Add Delivery Staff</DialogTitle></DialogHeader>
+            <form onSubmit={addStaff} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-body font-medium">Full Name</Label>
+                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Full name" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-body font-medium">Mobile Number</Label>
+                <Input type="tel" maxLength={10} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "") })} placeholder="10-digit number" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-body font-medium">Password</Label>
+                <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min 6 characters" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-body font-medium">Date of Birth (optional)</Label>
+                <Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} />
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full font-display font-semibold" disabled={saving}>
+                  {saving ? "Adding..." : "Add Staff"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Active Staff */}
