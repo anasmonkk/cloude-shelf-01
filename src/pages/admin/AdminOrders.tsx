@@ -97,7 +97,10 @@ const AdminOrders = () => {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="delivery_booked">Delivery Booked</SelectItem>
+            <SelectItem value="picked_up">Picked Up</SelectItem>
             <SelectItem value="in_transit">In Transit</SelectItem>
+
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="return_pending">Return Pending</SelectItem>
             <SelectItem value="returned">Returned</SelectItem>
