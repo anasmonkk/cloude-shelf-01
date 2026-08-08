@@ -37,8 +37,10 @@ const AdminDelivery = () => {
   const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [locStaff, setLocStaff] = useState<{ id: string; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", mobile: "", password: "", date_of_birth: "" });
+
   const { toast } = useToast();
 
   const fetchData = async () => {
