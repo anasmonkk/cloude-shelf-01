@@ -37,6 +37,7 @@ const statusLabel = (s: string) =>
 
 const AvailableOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
+  const [myLocations, setMyLocations] = useState<string[]>([]);
   const [stats, setStats] = useState({ completed: 0, earnings: 0 });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -45,16 +46,21 @@ const AvailableOrders = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: staffAreas } = await supabase.from("delivery_staff_areas").select("area_id").eq("staff_id", user.id);
-    const areaIds = (staffAreas || []).map(a => a.area_id);
+    const { data: staffWards } = await supabase
+      .from("delivery_staff_wards")
+      .select("ward_id, wards(ward_number, panchayaths(name))")
+      .eq("staff_id", user.id);
+    const wardIds = (staffWards || []).map(w => w.ward_id);
+    setMyLocations((staffWards || []).map(w => `${(w.wards as any)?.panchayaths?.name || "—"} · Ward ${(w.wards as any)?.ward_number}`));
 
     let availableOrders: any[] = [];
-    if (areaIds.length > 0) {
+    if (wardIds.length > 0) {
       const { data } = await supabase
         .from("orders")
-        .select("id, order_number, status, total_amount, delivery_charge, payment_method, delivery_address, created_at, items(name)")
+        .select("id, order_number, status, total_amount, delivery_charge, payment_method, delivery_address, created_at, items(name), wards(ward_number, panchayaths(name))")
         .eq("status", "confirmed")
         .is("delivery_staff_id", null)
+        .in("ward_id", wardIds)
         .order("created_at", { ascending: false });
       availableOrders = data || [];
     }
@@ -66,7 +72,15 @@ const AvailableOrders = () => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const channel = supabase
+      .channel("delivery-open-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
 
   const acceptOrder = async (orderId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
