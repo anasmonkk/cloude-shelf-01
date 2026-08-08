@@ -5,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, CheckCircle, XCircle, Loader2, Eye, CreditCard, MapPin } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, CheckCircle, XCircle, Loader2, Eye, CreditCard, MapPin, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +34,9 @@ const AdminItems = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+  const [allCategories, setAllCategories] = useState<any[]>([]);
   const { toast } = useToast();
 
   const fetchItems = async () => {
@@ -57,7 +63,46 @@ const AdminItems = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => {
+    fetchItems();
+    supabase.from("categories").select("id, name").order("name").then(({ data }) => setAllCategories(data || []));
+  }, []);
+
+  const openEdit = (item: any) => {
+    setEditItem({
+      id: item.id,
+      name: item.name,
+      description: item.description || "",
+      owner_price: String(item.owner_price ?? ""),
+      category_id: item.category_id,
+      payment_type: item.payment_type,
+      status: item.status,
+      image_url_1: item.image_urls?.[0] || "",
+      image_url_2: item.image_urls?.[1] || "",
+      image_url_3: item.image_urls?.[2] || "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editItem) return;
+    setSaving(true);
+    const urls = [editItem.image_url_1, editItem.image_url_2, editItem.image_url_3].map((u: string) => u.trim()).filter(Boolean);
+    const { error } = await supabase.from("items").update({
+      name: editItem.name.trim(),
+      description: editItem.description.trim() || null,
+      owner_price: parseFloat(editItem.owner_price) || 0,
+      category_id: editItem.category_id,
+      payment_type: editItem.payment_type,
+      status: editItem.status,
+      image_urls: urls,
+    }).eq("id", editItem.id);
+    setSaving(false);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Item updated" });
+    setEditItem(null);
+    setSelectedItem(null);
+    fetchItems();
+  };
 
   const updateStatus = async (id: string, status: "active" | "rejected") => {
     const { error } = await supabase.from("items").update({ status }).eq("id", id);
@@ -117,6 +162,9 @@ const AdminItems = () => {
                       <div className="flex gap-1">
                         <Button size="sm" variant="ghost" onClick={() => setSelectedItem(item)}>
                           <Eye className="h-4 w-4 text-primary" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
                         {item.status === "pending_approval" && (
                           <>
@@ -227,6 +275,11 @@ const AdminItems = () => {
                   </p>
 
                   {/* Actions */}
+                  <div className="pt-2">
+                    <Button variant="outline" className="w-full" onClick={() => openEdit(selectedItem)}>
+                      <Pencil className="h-4 w-4 mr-1" /> Edit Item Details
+                    </Button>
+                  </div>
                   {selectedItem.status === "pending_approval" && (
                     <div className="flex gap-2 pt-2">
                       <Button className="flex-1" onClick={() => updateStatus(selectedItem.id, "active")}>
@@ -241,6 +294,60 @@ const AdminItems = () => {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-display text-xl">Edit Item</DialogTitle></DialogHeader>
+          {editItem && (
+            <div className="space-y-3">
+              <div className="space-y-1.5"><Label>Name</Label>
+                <Input value={editItem.name} onChange={e => setEditItem({ ...editItem, name: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Description</Label>
+                <Textarea value={editItem.description} onChange={e => setEditItem({ ...editItem, description: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Rental Price (₹)</Label>
+                  <Input type="number" value={editItem.owner_price} onChange={e => setEditItem({ ...editItem, owner_price: e.target.value })} /></div>
+                <div className="space-y-1.5"><Label>Category</Label>
+                  <Select value={editItem.category_id} onValueChange={v => setEditItem({ ...editItem, category_id: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{allCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Payment Type</Label>
+                  <Select value={editItem.payment_type} onValueChange={v => setEditItem({ ...editItem, payment_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="prepaid">Prepaid</SelectItem>
+                      <SelectItem value="cash_on_delivery">Cash on Delivery</SelectItem>
+                    </SelectContent>
+                  </Select></div>
+                <div className="space-y-1.5"><Label>Status</Label>
+                  <Select value={editItem.status} onValueChange={v => setEditItem({ ...editItem, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending_approval">Pending</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select></div>
+              </div>
+              {[1, 2, 3].map(n => (
+                <div key={n} className="space-y-1.5"><Label>Image URL {n}</Label>
+                  <Input value={editItem[`image_url_${n}`]} onChange={e => setEditItem({ ...editItem, [`image_url_${n}`]: e.target.value })} placeholder="https://..." /></div>
+              ))}
+              <div className="flex gap-2 pt-2">
+                <Button className="flex-1" onClick={saveEdit} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Save Changes
+                </Button>
+                <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
