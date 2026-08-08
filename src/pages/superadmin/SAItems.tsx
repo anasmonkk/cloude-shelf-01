@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Package, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, Package, Loader2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,12 +25,15 @@ const SAItems = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   const fetchData = async () => {
     const { data } = await supabase
       .from("items")
-      .select("id, name, owner_price, status, created_at, owner_id, categories(name), areas(name)")
+      .select("id, name, description, owner_price, status, created_at, owner_id, category_id, payment_type, image_urls, categories(name), areas(name)")
       .order("created_at", { ascending: false });
     const rows = data || [];
     const ownerIds = [...new Set(rows.map(r => r.owner_id))];
@@ -40,7 +46,45 @@ const SAItems = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+    supabase.from("categories").select("id, name").order("name").then(({ data }) => setAllCategories(data || []));
+  }, []);
+
+  const openEdit = (item: any) => {
+    setEditItem({
+      id: item.id,
+      name: item.name,
+      description: item.description || "",
+      owner_price: String(item.owner_price ?? ""),
+      category_id: item.category_id,
+      payment_type: item.payment_type,
+      status: item.status,
+      image_url_1: item.image_urls?.[0] || "",
+      image_url_2: item.image_urls?.[1] || "",
+      image_url_3: item.image_urls?.[2] || "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editItem) return;
+    setSaving(true);
+    const urls = [editItem.image_url_1, editItem.image_url_2, editItem.image_url_3].map((u: string) => u.trim()).filter(Boolean);
+    const { error } = await supabase.from("items").update({
+      name: editItem.name.trim(),
+      description: editItem.description.trim() || null,
+      owner_price: parseFloat(editItem.owner_price) || 0,
+      category_id: editItem.category_id,
+      payment_type: editItem.payment_type,
+      status: editItem.status as any,
+      image_urls: urls,
+    }).eq("id", editItem.id);
+    setSaving(false);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Item updated" });
+    setEditItem(null);
+    fetchData();
+  };
 
   const setStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("items").update({ status: status as any }).eq("id", id);
@@ -97,6 +141,7 @@ const SAItems = () => {
                 <TableCell>₹{Number(i.owner_price).toLocaleString("en-IN")}</TableCell>
                 <TableCell><Badge className={statusColors[i.status]} variant="secondary">{statusLabel(i.status)}</Badge></TableCell>
                 <TableCell className="text-right space-x-2 whitespace-nowrap">
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(i)}><Pencil className="h-4 w-4" /></Button>
                   {i.status !== "active" && <Button size="sm" onClick={() => setStatus(i.id, "active")}>Approve</Button>}
                   {i.status !== "rejected" && <Button size="sm" variant="outline" onClick={() => setStatus(i.id, "rejected")}>Reject</Button>}
                   {i.status === "active" && <Button size="sm" variant="ghost" onClick={() => setStatus(i.id, "inactive")}>Deactivate</Button>}
@@ -109,6 +154,56 @@ const SAItems = () => {
           </TableBody>
         </Table>
       </CardContent>
+
+      <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-display text-xl">Edit Item</DialogTitle></DialogHeader>
+          {editItem && (
+            <div className="space-y-3">
+              <div className="space-y-1.5"><Label>Name</Label>
+                <Input value={editItem.name} onChange={e => setEditItem({ ...editItem, name: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Description</Label>
+                <Textarea value={editItem.description} onChange={e => setEditItem({ ...editItem, description: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Rental Price (₹)</Label>
+                  <Input type="number" value={editItem.owner_price} onChange={e => setEditItem({ ...editItem, owner_price: e.target.value })} /></div>
+                <div className="space-y-1.5"><Label>Category</Label>
+                  <Select value={editItem.category_id} onValueChange={v => setEditItem({ ...editItem, category_id: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{allCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Payment Type</Label>
+                  <Select value={editItem.payment_type} onValueChange={v => setEditItem({ ...editItem, payment_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="prepaid">Prepaid</SelectItem>
+                      <SelectItem value="cash_on_delivery">Cash on Delivery</SelectItem>
+                    </SelectContent>
+                  </Select></div>
+                <div className="space-y-1.5"><Label>Status</Label>
+                  <Select value={editItem.status} onValueChange={v => setEditItem({ ...editItem, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(statusColors).map(s => <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>)}
+                    </SelectContent>
+                  </Select></div>
+              </div>
+              {[1, 2, 3].map(n => (
+                <div key={n} className="space-y-1.5"><Label>Image URL {n}</Label>
+                  <Input value={editItem[`image_url_${n}`]} onChange={e => setEditItem({ ...editItem, [`image_url_${n}`]: e.target.value })} placeholder="https://..." /></div>
+              ))}
+              <div className="flex gap-2 pt-2">
+                <Button className="flex-1" onClick={saveEdit} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Save Changes
+                </Button>
+                <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
