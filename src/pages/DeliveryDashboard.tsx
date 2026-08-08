@@ -132,6 +132,18 @@ const AvailableOrders = () => {
       </div>
 
       <Card className="shadow-card mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base">My Pickup Locations</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {myLocations.length === 0 && (
+            <p className="text-sm text-muted-foreground">No panchayath/ward assigned yet. Ask the admin to allocate your pickup locations.</p>
+          )}
+          {myLocations.map(l => <Badge key={l} variant="secondary" className="text-xs">{l}</Badge>)}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-card mb-4">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="font-display text-lg">Delivery Requests</CardTitle>
           {orders.length > 0 && <Badge className="bg-destructive text-destructive-foreground">{orders.length} New</Badge>}
@@ -145,6 +157,9 @@ const AvailableOrders = () => {
                 <span className="text-xs font-body text-muted-foreground">{o.order_number}</span>
               </div>
               <div className="text-xs font-body text-muted-foreground space-y-1">
+                {(o.wards as any) && (
+                  <p>🏷 {(o.wards as any).panchayaths?.name || "—"} · Ward {(o.wards as any).ward_number}</p>
+                )}
                 <p>📍 {o.delivery_address || "Address pending"}</p>
                 <p>
                   {o.payment_method === "cash_on_delivery"
@@ -152,6 +167,7 @@ const AvailableOrders = () => {
                     : "Prepaid — no cash to collect"}
                 </p>
               </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-sm font-display font-bold text-primary">₹{Number(o.delivery_charge).toLocaleString("en-IN")}</span>
                 <Button size="sm" className="font-display text-xs" onClick={() => acceptOrder(o.id)}>Accept Request</Button>
