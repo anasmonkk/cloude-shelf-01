@@ -418,7 +418,7 @@ const AdminDelivery = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Mobile</TableHead>
                 <TableHead>DOB</TableHead>
-                <TableHead className="hidden md:table-cell">Area</TableHead>
+                <TableHead className="hidden md:table-cell">Pickup Locations</TableHead>
                 <TableHead>Deliveries</TableHead>
                 <TableHead className="hidden md:table-cell">Wallet</TableHead>
                 <TableHead>Action</TableHead>
@@ -433,14 +433,27 @@ const AdminDelivery = () => {
                   <TableCell className="font-display font-medium">{s.name}</TableCell>
                   <TableCell className="font-body">{s.mobile}</TableCell>
                   <TableCell className="text-sm">{s.dob}</TableCell>
-                  <TableCell className="hidden md:table-cell font-body text-muted-foreground">{s.area}</TableCell>
+                  <TableCell className="hidden md:table-cell font-body text-muted-foreground text-xs max-w-[240px]">
+                    {s.locations?.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {s.locations.slice(0, 4).map((l: string) => <Badge key={l} variant="secondary" className="text-[10px]">{l}</Badge>)}
+                        {s.locations.length > 4 && <Badge variant="outline" className="text-[10px]">+{s.locations.length - 4}</Badge>}
+                      </div>
+                    ) : "Not assigned"}
+                  </TableCell>
                   <TableCell className="font-display font-semibold">{s.deliveries}</TableCell>
                   <TableCell className="hidden md:table-cell font-display font-semibold text-accent">{s.wallet}</TableCell>
                   <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => removeDelivery(s.id)}>
-                      <XCircle className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setLocStaff({ id: s.id, name: s.name })}>
+                        <MapPin className="h-3.5 w-3.5 mr-1" /> Locations
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => removeDelivery(s.id)}>
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
