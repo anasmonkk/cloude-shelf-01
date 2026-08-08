@@ -85,14 +85,22 @@ const AvailableOrders = () => {
   const acceptOrder = async (orderId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("orders")
       .update({ delivery_staff_id: user.id, status: "delivery_booked" as any, booked_at: new Date().toISOString() })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .is("delivery_staff_id", null)
+      .select("id");
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (!data || data.length === 0) {
+      toast({ title: "Already taken", description: "Another staff member accepted this order.", variant: "destructive" });
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      return;
+    }
     toast({ title: "Delivery booked", description: "Head to the vendor for pickup." });
     setOrders(prev => prev.filter(o => o.id !== orderId));
   };
+
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
