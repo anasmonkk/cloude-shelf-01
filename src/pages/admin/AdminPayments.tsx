@@ -27,10 +27,12 @@ const AdminPayments = () => {
       pending: "bg-amber-100 text-amber-800",
       verified: "bg-emerald-100 text-emerald-800",
       collected: "bg-blue-100 text-blue-800",
+      submitted: "bg-violet-100 text-violet-800",
       refunded: "bg-red-100 text-red-800",
     };
     return map[s] || "";
   };
+
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 

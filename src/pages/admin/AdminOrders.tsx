@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
   confirmed: "bg-blue-100 text-blue-800",
+  delivery_booked: "bg-violet-100 text-violet-800",
+  picked_up: "bg-cyan-100 text-cyan-800",
   in_transit: "bg-indigo-100 text-indigo-800",
   delivered: "bg-emerald-100 text-emerald-800",
   return_pending: "bg-orange-100 text-orange-800",
@@ -22,11 +24,13 @@ const statusColors: Record<string, string> = {
 
 const statusLabel = (s: string) => {
   const map: Record<string, string> = {
-    pending: "Pending", confirmed: "Confirmed", in_transit: "In Transit",
+    pending: "Pending", confirmed: "Confirmed", delivery_booked: "Delivery Booked",
+    picked_up: "Picked Up", in_transit: "In Transit",
     delivered: "Delivered", return_pending: "Return Pending", returned: "Returned", cancelled: "Cancelled",
   };
   return map[s] || s;
 };
+
 
 const AdminOrders = () => {
   const [search, setSearch] = useState("");
@@ -93,7 +97,10 @@ const AdminOrders = () => {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="delivery_booked">Delivery Booked</SelectItem>
+            <SelectItem value="picked_up">Picked Up</SelectItem>
             <SelectItem value="in_transit">In Transit</SelectItem>
+
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="return_pending">Return Pending</SelectItem>
             <SelectItem value="returned">Returned</SelectItem>

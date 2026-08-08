@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Truck, Package, Wallet, User, Bell, Loader2 } from "lucide-react";
+import { Truck, Wallet, User, Bell, Loader2, PackageCheck, Banknote } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
-  { label: "Available Orders", path: "/delivery", icon: <Bell className="h-4 w-4" /> },
+  { label: "Delivery Requests", path: "/delivery", icon: <Bell className="h-4 w-4" /> },
   { label: "My Deliveries", path: "/delivery/active", icon: <Truck className="h-4 w-4" /> },
+  { label: "Cash Collections", path: "/delivery/collections", icon: <Banknote className="h-4 w-4" /> },
   { label: "Wallet", path: "/delivery/wallet", icon: <Wallet className="h-4 w-4" /> },
   { label: "Profile", path: "/delivery/profile", icon: <User className="h-4 w-4" /> },
 ];
+
+const statusColors: Record<string, string> = {
+  confirmed: "bg-blue-100 text-blue-800",
+  delivery_booked: "bg-violet-100 text-violet-800",
+  picked_up: "bg-indigo-100 text-indigo-800",
+  in_transit: "bg-indigo-100 text-indigo-800",
+  delivered: "bg-emerald-100 text-emerald-800",
+  return_pending: "bg-amber-100 text-amber-800",
+  returned: "bg-muted text-muted-foreground",
+};
+
+const statusLabel = (s: string) =>
+  ({
+    confirmed: "Awaiting Pickup Booking",
+    delivery_booked: "Delivery Booked",
+    picked_up: "Picked Up",
+    in_transit: "In Transit",
+    delivered: "Delivered",
+  }[s] || s.replace(/_/g, " "));
 
 const AvailableOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -21,44 +41,42 @@ const AvailableOrders = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const load = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      // Get staff's areas
-      const { data: staffAreas } = await supabase.from("delivery_staff_areas").select("area_id").eq("staff_id", user.id);
-      const areaIds = (staffAreas || []).map(a => a.area_id);
+    const { data: staffAreas } = await supabase.from("delivery_staff_areas").select("area_id").eq("staff_id", user.id);
+    const areaIds = (staffAreas || []).map(a => a.area_id);
 
-      // Get available orders (pending, no delivery staff assigned, in staff's areas)
-      let availableOrders: any[] = [];
-      if (areaIds.length > 0) {
-        const { data } = await supabase
-          .from("orders")
-          .select("id, order_number, status, total_amount, delivery_charge, delivery_address, created_at, items(name), owner_id, profiles!orders_owner_id_fkey(full_name)")
-          .in("status", ["confirmed"])
-          .is("delivery_staff_id", null);
-        availableOrders = data || [];
-      }
-      setOrders(availableOrders);
+    let availableOrders: any[] = [];
+    if (areaIds.length > 0) {
+      const { data } = await supabase
+        .from("orders")
+        .select("id, order_number, status, total_amount, delivery_charge, payment_method, delivery_address, created_at, items(name)")
+        .eq("status", "confirmed")
+        .is("delivery_staff_id", null)
+        .order("created_at", { ascending: false });
+      availableOrders = data || [];
+    }
+    setOrders(availableOrders);
 
-      // My stats
-      const { data: myOrders } = await supabase.from("orders").select("id, status, delivery_charge").eq("delivery_staff_id", user.id);
-      const completed = (myOrders || []).filter(o => o.status === "delivered").length;
-      const earnings = (myOrders || []).filter(o => o.status === "delivered").reduce((sum, o) => sum + Number(o.delivery_charge), 0);
-      setStats({ completed, earnings });
+    const { data: myOrders } = await supabase.from("orders").select("id, status, delivery_charge").eq("delivery_staff_id", user.id);
+    const done = (myOrders || []).filter(o => o.status === "delivered");
+    setStats({ completed: done.length, earnings: done.reduce((sum, o) => sum + Number(o.delivery_charge), 0) });
+    setLoading(false);
+  };
 
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const acceptOrder = async (orderId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase.from("orders").update({ delivery_staff_id: user.id, status: "in_transit" }).eq("id", orderId);
+    const { error } = await supabase
+      .from("orders")
+      .update({ delivery_staff_id: user.id, status: "delivery_booked" as any, booked_at: new Date().toISOString() })
+      .eq("id", orderId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Order accepted!" });
+    toast({ title: "Delivery booked", description: "Head to the vendor for pickup." });
     setOrders(prev => prev.filter(o => o.id !== orderId));
   };
 
@@ -93,11 +111,11 @@ const AvailableOrders = () => {
 
       <Card className="shadow-card mb-4">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="font-display text-lg">Available Orders</CardTitle>
+          <CardTitle className="font-display text-lg">Delivery Requests</CardTitle>
           {orders.length > 0 && <Badge className="bg-destructive text-destructive-foreground">{orders.length} New</Badge>}
         </CardHeader>
         <CardContent className="space-y-3">
-          {orders.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No available orders right now</p>}
+          {orders.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No delivery requests right now</p>}
           {orders.map((o) => (
             <div key={o.id} className="p-4 rounded-lg border border-border bg-card space-y-2">
               <div className="flex items-center justify-between">
@@ -106,10 +124,15 @@ const AvailableOrders = () => {
               </div>
               <div className="text-xs font-body text-muted-foreground space-y-1">
                 <p>📍 {o.delivery_address || "Address pending"}</p>
+                <p>
+                  {o.payment_method === "cash_on_delivery"
+                    ? `Collect ₹${Number(o.total_amount).toLocaleString("en-IN")} in cash`
+                    : "Prepaid — no cash to collect"}
+                </p>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-display font-bold text-primary">₹{Number(o.delivery_charge).toLocaleString("en-IN")}</span>
-                <Button size="sm" className="font-display text-xs" onClick={() => acceptOrder(o.id)}>Accept Order</Button>
+                <Button size="sm" className="font-display text-xs" onClick={() => acceptOrder(o.id)}>Accept Request</Button>
               </div>
             </div>
           ))}
@@ -124,36 +147,60 @@ const MyDeliveries = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("orders")
-        .select("id, order_number, status, delivery_charge, delivery_address, created_at, items(name)")
-        .eq("delivery_staff_id", user.id)
-        .order("created_at", { ascending: false });
-      setOrders(data || []);
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+  const load = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("orders")
+      .select("id, order_number, status, delivery_charge, total_amount, payment_method, delivery_address, created_at, items(name)")
+      .eq("delivery_staff_id", user.id)
+      .order("created_at", { ascending: false });
+    setOrders(data || []);
+    setLoading(false);
+  };
 
-  const updateStatus = async (orderId: string, status: string) => {
-    const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", orderId);
+  useEffect(() => { load(); }, []);
+
+  const markPickedUp = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "picked_up" as any, picked_up_at: new Date().toISOString() })
+      .eq("id", orderId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Status updated" });
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+    toast({ title: "Marked as picked up" });
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "picked_up" } : o));
+  };
+
+  const markDelivered = async (order: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "delivered" as any, delivered_at: new Date().toISOString() })
+      .eq("id", order.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+
+    if (order.payment_method === "cash_on_delivery") {
+      const { error: payError } = await supabase.from("payments").insert({
+        order_id: order.id,
+        amount: order.total_amount,
+        method: "cash_on_delivery" as any,
+        status: "collected" as any,
+        collected_by: user.id,
+        collected_at: new Date().toISOString(),
+      });
+      if (payError) {
+        toast({ title: "Cash not recorded", description: payError.message, variant: "destructive" });
+      } else {
+        toast({ title: "Delivered", description: "Cash added to your collections." });
+      }
+    } else {
+      toast({ title: "Delivered" });
+    }
+    setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: "delivered" } : o));
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
-
-  const statusColors: Record<string, string> = {
-    in_transit: "bg-blue-100 text-blue-800",
-    delivered: "bg-green-100 text-green-800",
-    return_pending: "bg-amber-100 text-amber-800",
-    returned: "bg-muted text-muted-foreground",
-  };
 
   return (
     <Card className="shadow-card">
@@ -164,19 +211,115 @@ const MyDeliveries = () => {
           <div key={o.id} className="p-4 rounded-lg border border-border space-y-2">
             <div className="flex items-center justify-between">
               <p className="font-display font-semibold text-sm">{(o.items as any)?.name || "Item"}</p>
-              <Badge className={statusColors[o.status] || "bg-muted text-muted-foreground"}>{o.status.replace(/_/g, " ")}</Badge>
+              <Badge className={statusColors[o.status] || "bg-muted text-muted-foreground"}>{statusLabel(o.status)}</Badge>
             </div>
             <p className="text-xs text-muted-foreground">📍 {o.delivery_address || "—"}</p>
+            {o.payment_method === "cash_on_delivery" && o.status !== "delivered" && (
+              <p className="text-xs text-amber-600 font-body">Collect ₹{Number(o.total_amount).toLocaleString("en-IN")} on delivery</p>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-sm font-display font-bold text-primary">₹{Number(o.delivery_charge)}</span>
-              {o.status === "in_transit" && (
-                <Button size="sm" variant="outline" onClick={() => updateStatus(o.id, "delivered")}>Mark Delivered</Button>
-              )}
+              <div className="flex gap-2">
+                {o.status === "delivery_booked" && (
+                  <Button size="sm" variant="outline" onClick={() => markPickedUp(o.id)}>
+                    <PackageCheck className="h-4 w-4 mr-1" /> Mark Picked Up
+                  </Button>
+                )}
+                {(o.status === "picked_up" || o.status === "in_transit") && (
+                  <Button size="sm" onClick={() => markDelivered(o)}>Mark Delivered</Button>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </CardContent>
     </Card>
+  );
+};
+
+const Collections = () => {
+  const [collections, setCollections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const load = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("payments")
+      .select("id, amount, status, created_at, submitted_at, orders(order_number)")
+      .eq("collected_by", user.id)
+      .order("created_at", { ascending: false });
+    setCollections(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const submitToOffice = async (paymentId: string) => {
+    const { error } = await supabase
+      .from("payments")
+      .update({ status: "submitted" as any, submitted_at: new Date().toISOString() })
+      .eq("id", paymentId);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Submitted to office", description: "Awaiting admin verification." });
+    setCollections(prev => prev.map(c => c.id === paymentId ? { ...c, status: "submitted" } : c));
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
+  const inHand = collections.filter(c => c.status === "collected");
+  const inHandTotal = inHand.reduce((s, c) => s + Number(c.amount), 0);
+
+  const submitAll = async () => {
+    for (const c of inHand) await submitToOffice(c.id);
+  };
+
+  const payStatus: Record<string, string> = {
+    collected: "bg-amber-100 text-amber-800",
+    submitted: "bg-blue-100 text-blue-800",
+    verified: "bg-emerald-100 text-emerald-800",
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="shadow-card">
+        <CardContent className="p-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-muted-foreground font-body">Cash in hand</p>
+            <p className="text-2xl font-display font-bold text-foreground">₹{inHandTotal.toLocaleString("en-IN")}</p>
+          </div>
+          {inHand.length > 0 && (
+            <Button onClick={submitAll} className="font-display">
+              <Banknote className="h-4 w-4 mr-1" /> Submit All to Office
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-card">
+        <CardHeader><CardTitle className="font-display text-lg">Cash Collections</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {collections.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No cash collected yet</p>}
+          {collections.map(c => (
+            <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+              <div>
+                <p className="font-display font-semibold text-sm">{(c.orders as any)?.order_number || "—"}</p>
+                <p className="text-xs text-muted-foreground font-body">₹{Number(c.amount).toLocaleString("en-IN")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className={payStatus[c.status] || "bg-muted text-muted-foreground"}>
+                  {c.status === "submitted" ? "Submitted to Office" : c.status === "collected" ? "In Hand" : c.status}
+                </Badge>
+                {c.status === "collected" && (
+                  <Button size="sm" variant="outline" onClick={() => submitToOffice(c.id)}>Submit</Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
@@ -252,8 +395,9 @@ const DeliveryProfile = () => {
 };
 
 const pageTitles: Record<string, string> = {
-  "/delivery": "Available Orders",
+  "/delivery": "Delivery Requests",
   "/delivery/active": "My Deliveries",
+  "/delivery/collections": "Cash Collections",
   "/delivery/wallet": "Wallet",
   "/delivery/profile": "Profile",
 };
@@ -261,11 +405,12 @@ const pageTitles: Record<string, string> = {
 const DeliveryDashboard = () => {
   const location = useLocation();
   const path = location.pathname;
-  const title = pageTitles[path] || "Available Orders";
+  const title = pageTitles[path] || "Delivery Requests";
 
   const renderContent = () => {
     switch (path) {
       case "/delivery/active": return <MyDeliveries />;
+      case "/delivery/collections": return <Collections />;
       case "/delivery/wallet": return <DeliveryWallet />;
       case "/delivery/profile": return <DeliveryProfile />;
       default: return <AvailableOrders />;
