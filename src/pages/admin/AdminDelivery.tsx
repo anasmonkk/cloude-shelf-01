@@ -4,14 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Loader2, CheckCircle, XCircle, Users } from "lucide-react";
+import { Search, Loader2, CheckCircle, XCircle, Users, Bell, Banknote } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+const flowStatuses = ["confirmed", "delivery_booked", "picked_up", "delivered"] as const;
+
+const flowLabels: Record<string, string> = {
+  confirmed: "Awaiting Delivery Staff",
+  delivery_booked: "Delivery Booked",
+  picked_up: "Picked Up",
+  delivered: "Delivered",
+};
+
+const flowColors: Record<string, string> = {
+  confirmed: "bg-blue-100 text-blue-800",
+  delivery_booked: "bg-violet-100 text-violet-800",
+  picked_up: "bg-cyan-100 text-cyan-800",
+  delivered: "bg-emerald-100 text-emerald-800",
+};
 
 const AdminDelivery = () => {
   const [search, setSearch] = useState("");
   const [staff, setStaff] = useState<any[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+  const [flowOrders, setFlowOrders] = useState<any[]>([]);
+  const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -43,7 +61,23 @@ const AdminDelivery = () => {
       }));
     setPendingUsers(pending);
 
+    // Live delivery pipeline
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("id, order_number, status, total_amount, payment_method, delivery_address, delivery_staff_id, created_at, items(name)")
+      .in("status", flowStatuses as unknown as string[])
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    // Cash collections submitted by delivery staff
+    const { data: payments } = await supabase
+      .from("payments")
+      .select("id, amount, status, collected_by, collected_at, submitted_at, orders(order_number)")
+      .in("status", ["collected", "submitted"])
+      .order("created_at", { ascending: false });
+
     // Active delivery staff
+    let staffNames: Record<string, string> = {};
     if (deliveryIds.length > 0) {
       const [profilesRes, areasRes, ordersRes, walletsRes] = await Promise.all([
         supabase.from("profiles").select("id, full_name, mobile, date_of_birth").in("id", deliveryIds),
@@ -51,6 +85,8 @@ const AdminDelivery = () => {
         supabase.from("orders").select("id, delivery_staff_id").in("delivery_staff_id", deliveryIds),
         supabase.from("wallets").select("user_id, balance").in("user_id", deliveryIds),
       ]);
+
+      staffNames = Object.fromEntries((profilesRes.data || []).map(p => [p.id, p.full_name]));
 
       const staffList = (profilesRes.data || []).map(p => {
         const area = (areasRes.data || []).find(a => a.staff_id === p.id);
@@ -68,6 +104,9 @@ const AdminDelivery = () => {
     } else {
       setStaff([]);
     }
+
+    setFlowOrders((orders || []).map(o => ({ ...o, staff_name: o.delivery_staff_id ? (staffNames[o.delivery_staff_id] || "Assigned") : "—" })));
+    setCollections((payments || []).map(p => ({ ...p, staff_name: p.collected_by ? (staffNames[p.collected_by] || "Staff") : "—" })));
 
     setLoading(false);
   };
@@ -97,14 +136,128 @@ const AdminDelivery = () => {
     fetchData();
   };
 
+  const verifyCash = async (paymentId: string) => {
+    const { error } = await supabase
+      .from("payments")
+      .update({ status: "verified" as any, verified_by: (await supabase.auth.getUser()).data.user?.id })
+      .eq("id", paymentId);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Cash received at office" });
+    setCollections(prev => prev.filter(c => c.id !== paymentId));
+  };
+
   const filtered = staff.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) || s.mobile.includes(search)
   );
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
+  const counts = Object.fromEntries(flowStatuses.map(s => [s, flowOrders.filter(o => o.status === s).length]));
+  const submitted = collections.filter(c => c.status === "submitted");
+  const inHand = collections.filter(c => c.status === "collected");
+
   return (
     <div className="space-y-6">
+      {/* Delivery pipeline */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {flowStatuses.map(s => (
+          <Card key={s} className="shadow-card">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground font-body">{flowLabels[s]}</p>
+              <p className="text-2xl font-display font-bold text-foreground">{counts[s] || 0}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" /> Live Delivery Flow
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order</TableHead>
+                <TableHead className="hidden md:table-cell">Item</TableHead>
+                <TableHead>Staff</TableHead>
+                <TableHead className="hidden md:table-cell">Payment</TableHead>
+                <TableHead>Stage</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {flowOrders.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No orders in the delivery flow</TableCell></TableRow>
+              )}
+              {flowOrders.map(o => (
+                <TableRow key={o.id}>
+                  <TableCell className="font-display font-medium">{o.order_number}</TableCell>
+                  <TableCell className="hidden md:table-cell font-body text-muted-foreground">{(o.items as any)?.name || "—"}</TableCell>
+                  <TableCell className="font-body">{o.staff_name}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant={o.payment_method === "prepaid" ? "default" : "secondary"}>
+                      {o.payment_method === "prepaid" ? "Prepaid" : `COD ₹${Number(o.total_amount).toLocaleString("en-IN")}`}
+                    </Badge>
+                  </TableCell>
+                  <TableCell><Badge className={flowColors[o.status] || ""}>{flowLabels[o.status] || o.status}</Badge></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Cash collections */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Banknote className="h-5 w-5 text-accent" /> Cash Collections
+          </CardTitle>
+          <p className="text-xs text-muted-foreground font-body">
+            With staff: ₹{inHand.reduce((s, c) => s + Number(c.amount), 0).toLocaleString("en-IN")} · Submitted to office: ₹{submitted.reduce((s, c) => s + Number(c.amount), 0).toLocaleString("en-IN")}
+          </p>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order</TableHead>
+                <TableHead>Staff</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {collections.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No cash pending</TableCell></TableRow>
+              )}
+              {collections.map(c => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-display font-medium">{(c.orders as any)?.order_number || "—"}</TableCell>
+                  <TableCell className="font-body">{c.staff_name}</TableCell>
+                  <TableCell className="font-display font-semibold">₹{Number(c.amount).toLocaleString("en-IN")}</TableCell>
+                  <TableCell>
+                    <Badge className={c.status === "submitted" ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800"}>
+                      {c.status === "submitted" ? "Submitted to Office" : "With Staff"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {c.status === "submitted" && (
+                      <Button size="sm" onClick={() => verifyCash(c.id)}>
+                        <CheckCircle className="h-4 w-4 mr-1" /> Confirm Received
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       {/* Pending Approvals */}
       {pendingUsers.length > 0 && (
         <Card className="shadow-card border-amber-200">
@@ -119,7 +272,6 @@ const AdminDelivery = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Mobile</TableHead>
-                  <TableHead>DOB</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
@@ -129,7 +281,6 @@ const AdminDelivery = () => {
                   <TableRow key={u.id}>
                     <TableCell className="font-display font-medium">{u.full_name || "—"}</TableCell>
                     <TableCell className="font-body">{u.mobile}</TableCell>
-                    <TableCell className="text-sm">{u.date_of_birth ? new Date(u.date_of_birth).toLocaleDateString("en-IN") : "—"}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">{new Date(u.created_at).toLocaleDateString("en-IN")}</TableCell>
                     <TableCell>
                       <Button size="sm" onClick={() => approveDelivery(u.id)}>
