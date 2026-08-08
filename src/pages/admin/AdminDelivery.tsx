@@ -229,6 +229,7 @@ const AdminDelivery = () => {
               <TableRow>
                 <TableHead>Order</TableHead>
                 <TableHead className="hidden md:table-cell">Item</TableHead>
+                <TableHead className="hidden md:table-cell">Pickup Location</TableHead>
                 <TableHead>Staff</TableHead>
                 <TableHead className="hidden md:table-cell">Payment</TableHead>
                 <TableHead>Stage</TableHead>
@@ -236,13 +237,37 @@ const AdminDelivery = () => {
             </TableHeader>
             <TableBody>
               {flowOrders.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No orders in the delivery flow</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No orders in the delivery flow</TableCell></TableRow>
               )}
-              {flowOrders.map(o => (
+              {flowOrders.map(o => {
+                const ward = (o.wards as any);
+                const matching = staff.filter(s => s.wardIds?.includes(o.ward_id));
+                const others = staff.filter(s => !s.wardIds?.includes(o.ward_id));
+                return (
                 <TableRow key={o.id}>
                   <TableCell className="font-display font-medium">{o.order_number}</TableCell>
                   <TableCell className="hidden md:table-cell font-body text-muted-foreground">{(o.items as any)?.name || "—"}</TableCell>
-                  <TableCell className="font-body">{o.staff_name}</TableCell>
+                  <TableCell className="hidden md:table-cell font-body text-muted-foreground text-sm">
+                    {ward ? `${ward.panchayaths?.name || "—"} · Ward ${ward.ward_number}` : "—"}
+                  </TableCell>
+                  <TableCell className="font-body">
+                    {o.delivery_staff_id ? o.staff_name : (
+                      <Select onValueChange={(v) => assignStaff(o.id, v)}>
+                        <SelectTrigger className="h-8 w-[190px] text-xs">
+                          <SelectValue placeholder={matching.length ? "Waiting for accept — assign" : "No staff in ward — assign"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {matching.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name} · in this ward</SelectItem>
+                          ))}
+                          {others.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          ))}
+                          {staff.length === 0 && <SelectItem value="none" disabled>No delivery staff</SelectItem>}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <Badge variant={o.payment_method === "prepaid" ? "default" : "secondary"}>
                       {o.payment_method === "prepaid" ? "Prepaid" : `COD ₹${Number(o.total_amount).toLocaleString("en-IN")}`}
@@ -250,8 +275,10 @@ const AdminDelivery = () => {
                   </TableCell>
                   <TableCell><Badge className={flowColors[o.status] || ""}>{flowLabels[o.status] || o.status}</Badge></TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
+
           </Table>
         </CardContent>
       </Card>
