@@ -65,7 +65,7 @@ const AdminDelivery = () => {
     const { data: orders } = await supabase
       .from("orders")
       .select("id, order_number, status, total_amount, payment_method, delivery_address, delivery_staff_id, created_at, items(name)")
-      .in("status", flowStatuses as unknown as string[])
+      .in("status", [...flowStatuses])
       .order("created_at", { ascending: false })
       .limit(100);
 
