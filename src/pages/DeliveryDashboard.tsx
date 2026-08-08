@@ -37,6 +37,7 @@ const statusLabel = (s: string) =>
 
 const AvailableOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
+  const [myLocations, setMyLocations] = useState<string[]>([]);
   const [stats, setStats] = useState({ completed: 0, earnings: 0 });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -45,16 +46,21 @@ const AvailableOrders = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: staffAreas } = await supabase.from("delivery_staff_areas").select("area_id").eq("staff_id", user.id);
-    const areaIds = (staffAreas || []).map(a => a.area_id);
+    const { data: staffWards } = await supabase
+      .from("delivery_staff_wards")
+      .select("ward_id, wards(ward_number, panchayaths(name))")
+      .eq("staff_id", user.id);
+    const wardIds = (staffWards || []).map(w => w.ward_id);
+    setMyLocations((staffWards || []).map(w => `${(w.wards as any)?.panchayaths?.name || "—"} · Ward ${(w.wards as any)?.ward_number}`));
 
     let availableOrders: any[] = [];
-    if (areaIds.length > 0) {
+    if (wardIds.length > 0) {
       const { data } = await supabase
         .from("orders")
-        .select("id, order_number, status, total_amount, delivery_charge, payment_method, delivery_address, created_at, items(name)")
+        .select("id, order_number, status, total_amount, delivery_charge, payment_method, delivery_address, created_at, items(name), wards(ward_number, panchayaths(name))")
         .eq("status", "confirmed")
         .is("delivery_staff_id", null)
+        .in("ward_id", wardIds)
         .order("created_at", { ascending: false });
       availableOrders = data || [];
     }
@@ -66,19 +72,35 @@ const AvailableOrders = () => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const channel = supabase
+      .channel("delivery-open-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
 
   const acceptOrder = async (orderId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("orders")
       .update({ delivery_staff_id: user.id, status: "delivery_booked" as any, booked_at: new Date().toISOString() })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .is("delivery_staff_id", null)
+      .select("id");
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (!data || data.length === 0) {
+      toast({ title: "Already taken", description: "Another staff member accepted this order.", variant: "destructive" });
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      return;
+    }
     toast({ title: "Delivery booked", description: "Head to the vendor for pickup." });
     setOrders(prev => prev.filter(o => o.id !== orderId));
   };
+
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
@@ -110,6 +132,18 @@ const AvailableOrders = () => {
       </div>
 
       <Card className="shadow-card mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base">My Pickup Locations</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {myLocations.length === 0 && (
+            <p className="text-sm text-muted-foreground">No panchayath/ward assigned yet. Ask the admin to allocate your pickup locations.</p>
+          )}
+          {myLocations.map(l => <Badge key={l} variant="secondary" className="text-xs">{l}</Badge>)}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-card mb-4">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="font-display text-lg">Delivery Requests</CardTitle>
           {orders.length > 0 && <Badge className="bg-destructive text-destructive-foreground">{orders.length} New</Badge>}
@@ -123,6 +157,9 @@ const AvailableOrders = () => {
                 <span className="text-xs font-body text-muted-foreground">{o.order_number}</span>
               </div>
               <div className="text-xs font-body text-muted-foreground space-y-1">
+                {(o.wards as any) && (
+                  <p>🏷 {(o.wards as any).panchayaths?.name || "—"} · Ward {(o.wards as any).ward_number}</p>
+                )}
                 <p>📍 {o.delivery_address || "Address pending"}</p>
                 <p>
                   {o.payment_method === "cash_on_delivery"
@@ -130,6 +167,7 @@ const AvailableOrders = () => {
                     : "Prepaid — no cash to collect"}
                 </p>
               </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-sm font-display font-bold text-primary">₹{Number(o.delivery_charge).toLocaleString("en-IN")}</span>
                 <Button size="sm" className="font-display text-xs" onClick={() => acceptOrder(o.id)}>Accept Request</Button>

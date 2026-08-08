@@ -5,10 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Search, Loader2, CheckCircle, XCircle, Users, Bell, Banknote, UserPlus } from "lucide-react";
+import { Search, Loader2, CheckCircle, XCircle, Users, Bell, Banknote, UserPlus, MapPin } from "lucide-react";
+import DeliveryLocationsDialog from "@/components/DeliveryLocationsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
 
 const flowStatuses = ["confirmed", "delivery_booked", "picked_up", "delivered"] as const;
 
@@ -34,8 +37,10 @@ const AdminDelivery = () => {
   const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [locStaff, setLocStaff] = useState<{ id: string; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", mobile: "", password: "", date_of_birth: "" });
+
   const { toast } = useToast();
 
   const fetchData = async () => {
@@ -69,7 +74,7 @@ const AdminDelivery = () => {
     // Live delivery pipeline
     const { data: orders } = await supabase
       .from("orders")
-      .select("id, order_number, status, total_amount, payment_method, delivery_address, delivery_staff_id, created_at, items(name)")
+      .select("id, order_number, status, total_amount, payment_method, delivery_address, delivery_staff_id, ward_id, created_at, items(name), wards(ward_number, panchayaths(name))")
       .in("status", [...flowStatuses])
       .order("created_at", { ascending: false })
       .limit(100);
@@ -83,24 +88,30 @@ const AdminDelivery = () => {
 
     // Active delivery staff
     let staffNames: Record<string, string> = {};
+    let staffWards: any[] = [];
     if (deliveryIds.length > 0) {
-      const [profilesRes, areasRes, ordersRes, walletsRes] = await Promise.all([
+      const [profilesRes, areasRes, ordersRes, walletsRes, wardsRes] = await Promise.all([
         supabase.from("profiles").select("id, full_name, mobile, date_of_birth").in("id", deliveryIds),
         supabase.from("delivery_staff_areas").select("staff_id, areas(name)").in("staff_id", deliveryIds),
         supabase.from("orders").select("id, delivery_staff_id").in("delivery_staff_id", deliveryIds),
         supabase.from("wallets").select("user_id, balance").in("user_id", deliveryIds),
+        supabase.from("delivery_staff_wards").select("staff_id, ward_id, wards(ward_number, panchayaths(name))").in("staff_id", deliveryIds),
       ]);
 
       staffNames = Object.fromEntries((profilesRes.data || []).map(p => [p.id, p.full_name]));
+      staffWards = wardsRes.data || [];
 
       const staffList = (profilesRes.data || []).map(p => {
         const area = (areasRes.data || []).find(a => a.staff_id === p.id);
         const deliveries = (ordersRes.data || []).filter(o => o.delivery_staff_id === p.id).length;
         const wallet = (walletsRes.data || []).find(w => w.user_id === p.id);
+        const myWards = staffWards.filter(w => w.staff_id === p.id);
         return {
           id: p.id, name: p.full_name, mobile: p.mobile,
           dob: p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("en-IN") : "—",
           area: (area?.areas as any)?.name || "—",
+          wardIds: myWards.map(w => w.ward_id),
+          locations: myWards.map(w => `${(w.wards as any)?.panchayaths?.name || "—"} · W${(w.wards as any)?.ward_number}`),
           deliveries,
           wallet: wallet ? `₹${Number(wallet.balance).toLocaleString("en-IN")}` : "₹0",
         };
@@ -112,6 +123,7 @@ const AdminDelivery = () => {
 
     setFlowOrders((orders || []).map(o => ({ ...o, staff_name: o.delivery_staff_id ? (staffNames[o.delivery_staff_id] || "Assigned") : "—" })));
     setCollections((payments || []).map(p => ({ ...p, staff_name: p.collected_by ? (staffNames[p.collected_by] || "Staff") : "—" })));
+
 
     setLoading(false);
   };
@@ -170,6 +182,17 @@ const AdminDelivery = () => {
     setCollections(prev => prev.filter(c => c.id !== paymentId));
   };
 
+  const assignStaff = async (orderId: string, staffId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ delivery_staff_id: staffId, status: "delivery_booked" as any, booked_at: new Date().toISOString() })
+      .eq("id", orderId);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Delivery staff assigned" });
+    fetchData();
+  };
+
+
   const filtered = staff.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) || s.mobile.includes(search)
   );
@@ -206,6 +229,7 @@ const AdminDelivery = () => {
               <TableRow>
                 <TableHead>Order</TableHead>
                 <TableHead className="hidden md:table-cell">Item</TableHead>
+                <TableHead className="hidden md:table-cell">Pickup Location</TableHead>
                 <TableHead>Staff</TableHead>
                 <TableHead className="hidden md:table-cell">Payment</TableHead>
                 <TableHead>Stage</TableHead>
@@ -213,13 +237,37 @@ const AdminDelivery = () => {
             </TableHeader>
             <TableBody>
               {flowOrders.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No orders in the delivery flow</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No orders in the delivery flow</TableCell></TableRow>
               )}
-              {flowOrders.map(o => (
+              {flowOrders.map(o => {
+                const ward = (o.wards as any);
+                const matching = staff.filter(s => s.wardIds?.includes(o.ward_id));
+                const others = staff.filter(s => !s.wardIds?.includes(o.ward_id));
+                return (
                 <TableRow key={o.id}>
                   <TableCell className="font-display font-medium">{o.order_number}</TableCell>
                   <TableCell className="hidden md:table-cell font-body text-muted-foreground">{(o.items as any)?.name || "—"}</TableCell>
-                  <TableCell className="font-body">{o.staff_name}</TableCell>
+                  <TableCell className="hidden md:table-cell font-body text-muted-foreground text-sm">
+                    {ward ? `${ward.panchayaths?.name || "—"} · Ward ${ward.ward_number}` : "—"}
+                  </TableCell>
+                  <TableCell className="font-body">
+                    {o.delivery_staff_id ? o.staff_name : (
+                      <Select onValueChange={(v) => assignStaff(o.id, v)}>
+                        <SelectTrigger className="h-8 w-[190px] text-xs">
+                          <SelectValue placeholder={matching.length ? "Waiting for accept — assign" : "No staff in ward — assign"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {matching.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name} · in this ward</SelectItem>
+                          ))}
+                          {others.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          ))}
+                          {staff.length === 0 && <SelectItem value="none" disabled>No delivery staff</SelectItem>}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <Badge variant={o.payment_method === "prepaid" ? "default" : "secondary"}>
                       {o.payment_method === "prepaid" ? "Prepaid" : `COD ₹${Number(o.total_amount).toLocaleString("en-IN")}`}
@@ -227,8 +275,10 @@ const AdminDelivery = () => {
                   </TableCell>
                   <TableCell><Badge className={flowColors[o.status] || ""}>{flowLabels[o.status] || o.status}</Badge></TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
+
           </Table>
         </CardContent>
       </Card>
@@ -368,7 +418,7 @@ const AdminDelivery = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Mobile</TableHead>
                 <TableHead>DOB</TableHead>
-                <TableHead className="hidden md:table-cell">Area</TableHead>
+                <TableHead className="hidden md:table-cell">Pickup Locations</TableHead>
                 <TableHead>Deliveries</TableHead>
                 <TableHead className="hidden md:table-cell">Wallet</TableHead>
                 <TableHead>Action</TableHead>
@@ -383,21 +433,42 @@ const AdminDelivery = () => {
                   <TableCell className="font-display font-medium">{s.name}</TableCell>
                   <TableCell className="font-body">{s.mobile}</TableCell>
                   <TableCell className="text-sm">{s.dob}</TableCell>
-                  <TableCell className="hidden md:table-cell font-body text-muted-foreground">{s.area}</TableCell>
+                  <TableCell className="hidden md:table-cell font-body text-muted-foreground text-xs max-w-[240px]">
+                    {s.locations?.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {s.locations.slice(0, 4).map((l: string) => <Badge key={l} variant="secondary" className="text-[10px]">{l}</Badge>)}
+                        {s.locations.length > 4 && <Badge variant="outline" className="text-[10px]">+{s.locations.length - 4}</Badge>}
+                      </div>
+                    ) : "Not assigned"}
+                  </TableCell>
                   <TableCell className="font-display font-semibold">{s.deliveries}</TableCell>
                   <TableCell className="hidden md:table-cell font-display font-semibold text-accent">{s.wallet}</TableCell>
                   <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => removeDelivery(s.id)}>
-                      <XCircle className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setLocStaff({ id: s.id, name: s.name })}>
+                        <MapPin className="h-3.5 w-3.5 mr-1" /> Locations
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => removeDelivery(s.id)}>
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <DeliveryLocationsDialog
+        staffId={locStaff?.id || null}
+        staffName={locStaff?.name}
+        onOpenChange={(open) => { if (!open) setLocStaff(null); }}
+        onSaved={fetchData}
+      />
     </div>
+
   );
 };
 
