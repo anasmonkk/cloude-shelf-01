@@ -253,9 +253,11 @@ export type Database = {
       }
       orders: {
         Row: {
+          booked_at: string | null
           commission_amount: number
           created_at: string
           customer_id: string
+          delivered_at: string | null
           delivery_address: string | null
           delivery_charge: number
           delivery_staff_id: string | null
@@ -265,15 +267,18 @@ export type Database = {
           owner_id: string
           owner_price: number
           payment_method: Database["public"]["Enums"]["payment_method"]
+          picked_up_at: string | null
           status: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at: string
           ward_id: string | null
         }
         Insert: {
+          booked_at?: string | null
           commission_amount: number
           created_at?: string
           customer_id: string
+          delivered_at?: string | null
           delivery_address?: string | null
           delivery_charge: number
           delivery_staff_id?: string | null
@@ -283,15 +288,18 @@ export type Database = {
           owner_id: string
           owner_price: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          picked_up_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at?: string
           ward_id?: string | null
         }
         Update: {
+          booked_at?: string | null
           commission_amount?: number
           created_at?: string
           customer_id?: string
+          delivered_at?: string | null
           delivery_address?: string | null
           delivery_charge?: number
           delivery_staff_id?: string | null
@@ -301,6 +309,7 @@ export type Database = {
           owner_id?: string
           owner_price?: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          picked_up_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount?: number
           updated_at?: string
@@ -384,34 +393,40 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          collected_at: string | null
           collected_by: string | null
           created_at: string
           id: string
           method: Database["public"]["Enums"]["payment_method"]
           order_id: string
           status: Database["public"]["Enums"]["payment_status"]
+          submitted_at: string | null
           updated_at: string
           verified_by: string | null
         }
         Insert: {
           amount: number
+          collected_at?: string | null
           collected_by?: string | null
           created_at?: string
           id?: string
           method: Database["public"]["Enums"]["payment_method"]
           order_id: string
           status?: Database["public"]["Enums"]["payment_status"]
+          submitted_at?: string | null
           updated_at?: string
           verified_by?: string | null
         }
         Update: {
           amount?: number
+          collected_at?: string | null
           collected_by?: string | null
           created_at?: string
           id?: string
           method?: Database["public"]["Enums"]["payment_method"]
           order_id?: string
           status?: Database["public"]["Enums"]["payment_status"]
+          submitted_at?: string | null
           updated_at?: string
           verified_by?: string | null
         }
@@ -671,13 +686,20 @@ export type Database = {
       order_status:
         | "pending"
         | "confirmed"
+        | "delivery_booked"
+        | "picked_up"
         | "in_transit"
         | "delivered"
         | "return_pending"
         | "returned"
         | "cancelled"
       payment_method: "prepaid" | "cash_on_delivery"
-      payment_status: "pending" | "verified" | "collected" | "refunded"
+      payment_status:
+        | "pending"
+        | "verified"
+        | "collected"
+        | "refunded"
+        | "submitted"
       settlement_status: "pending" | "settled"
     }
     CompositeTypes: {
@@ -811,6 +833,8 @@ export const Constants = {
       order_status: [
         "pending",
         "confirmed",
+        "delivery_booked",
+        "picked_up",
         "in_transit",
         "delivered",
         "return_pending",
@@ -818,7 +842,13 @@ export const Constants = {
         "cancelled",
       ],
       payment_method: ["prepaid", "cash_on_delivery"],
-      payment_status: ["pending", "verified", "collected", "refunded"],
+      payment_status: [
+        "pending",
+        "verified",
+        "collected",
+        "refunded",
+        "submitted",
+      ],
       settlement_status: ["pending", "settled"],
     },
   },
