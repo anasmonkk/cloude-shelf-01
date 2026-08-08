@@ -182,6 +182,17 @@ const AdminDelivery = () => {
     setCollections(prev => prev.filter(c => c.id !== paymentId));
   };
 
+  const assignStaff = async (orderId: string, staffId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ delivery_staff_id: staffId, status: "delivery_booked" as any, booked_at: new Date().toISOString() })
+      .eq("id", orderId);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Delivery staff assigned" });
+    fetchData();
+  };
+
+
   const filtered = staff.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) || s.mobile.includes(search)
   );
