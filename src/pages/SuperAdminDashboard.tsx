@@ -23,7 +23,8 @@ const pageTitles: Record<string, string> = {
   "/superadmin/panchayaths": "Panchayaths",
   "/superadmin/areas": "Areas",
   "/superadmin/wards": "Wards",
-  "/superadmin/commission": "Commission Rates",
+  "/superadmin/commission": "Categories & Commission",
+  "/superadmin/categories": "Categories & Commission",
   "/superadmin/admins": "Admin Accounts",
   "/superadmin/users": "All Users",
   "/superadmin/orders": "Orders",
@@ -291,7 +292,7 @@ const SuperAdminDashboard = () => {
     { label: "Orders", path: "/superadmin/orders", icon: <ShoppingCart className="h-4 w-4" /> },
     { label: "Items", path: "/superadmin/items", icon: <Package className="h-4 w-4" /> },
     { label: "Payments", path: "/superadmin/payments", icon: <CreditCard className="h-4 w-4" /> },
-    { label: "Commission", path: "/superadmin/commission", icon: <Percent className="h-4 w-4" /> },
+    { label: "Categories", path: "/superadmin/categories", icon: <Percent className="h-4 w-4" /> },
     { label: "Admin Accounts", path: "/superadmin/admins", icon: <Users className="h-4 w-4" /> },
     { label: "Settings", path: "/superadmin/settings", icon: <Settings className="h-4 w-4" /> },
   ];
@@ -315,6 +316,7 @@ const SuperAdminDashboard = () => {
       case "/superadmin/items": return <SAItems />;
       case "/superadmin/payments": return <SAPayments />;
       case "/superadmin/commission": return <SACommission />;
+      case "/superadmin/categories": return <SACommission />;
       case "/superadmin/admins": return <SAAdmins />;
       case "/superadmin/settings": return <SASettings />;
       default: return <DashboardHome />;

@@ -59,7 +59,7 @@ const BrowseItems = () => {
           .select("id, name, description, owner_price, status, image_urls, owner_id, category_id, created_at, categories(name, commission_rate)")
           .eq("status", "active")
           .order("created_at", { ascending: false }),
-        supabase.from("categories").select("id, name"),
+        supabase.from("categories").select("id, name, image_url"),
         supabase.from("delivery_config").select("fixed_charge").limit(1).maybeSingle(),
       ]);
 
@@ -134,7 +134,11 @@ const BrowseItems = () => {
                 }`}
               >
                 <span className={`grid place-items-center h-5 w-5 rounded-full shrink-0 ${active ? "bg-market-header-foreground/20" : "bg-muted"}`}>
-                  <Icon className={`h-3 w-3 ${active ? "" : "text-primary"}`} />
+                  {cat.image_url ? (
+                    <img src={cat.image_url} alt={cat.name} loading="lazy" className="h-5 w-5 rounded-full object-cover" />
+                  ) : (
+                    <Icon className={`h-3 w-3 ${active ? "" : "text-primary"}`} />
+                  )}
                 </span>
                 {cat.name}
               </button>
