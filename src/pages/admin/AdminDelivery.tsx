@@ -460,7 +460,15 @@ const AdminDelivery = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <DeliveryLocationsDialog
+        staffId={locStaff?.id || null}
+        staffName={locStaff?.name}
+        onOpenChange={(open) => { if (!open) setLocStaff(null); }}
+        onSaved={fetchData}
+      />
     </div>
+
   );
 };
 
