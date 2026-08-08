@@ -96,18 +96,21 @@ export type Database = {
           commission_rate: number
           created_at: string
           id: string
+          image_url: string | null
           name: string
         }
         Insert: {
           commission_rate?: number
           created_at?: string
           id?: string
+          image_url?: string | null
           name: string
         }
         Update: {
           commission_rate?: number
           created_at?: string
           id?: string
+          image_url?: string | null
           name?: string
         }
         Relationships: []
