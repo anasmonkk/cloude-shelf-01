@@ -74,7 +74,7 @@ const AdminDelivery = () => {
     // Live delivery pipeline
     const { data: orders } = await supabase
       .from("orders")
-      .select("id, order_number, status, total_amount, payment_method, delivery_address, delivery_staff_id, created_at, items(name)")
+      .select("id, order_number, status, total_amount, payment_method, delivery_address, delivery_staff_id, ward_id, created_at, items(name), wards(ward_number, panchayaths(name))")
       .in("status", [...flowStatuses])
       .order("created_at", { ascending: false })
       .limit(100);
@@ -88,24 +88,30 @@ const AdminDelivery = () => {
 
     // Active delivery staff
     let staffNames: Record<string, string> = {};
+    let staffWards: any[] = [];
     if (deliveryIds.length > 0) {
-      const [profilesRes, areasRes, ordersRes, walletsRes] = await Promise.all([
+      const [profilesRes, areasRes, ordersRes, walletsRes, wardsRes] = await Promise.all([
         supabase.from("profiles").select("id, full_name, mobile, date_of_birth").in("id", deliveryIds),
         supabase.from("delivery_staff_areas").select("staff_id, areas(name)").in("staff_id", deliveryIds),
         supabase.from("orders").select("id, delivery_staff_id").in("delivery_staff_id", deliveryIds),
         supabase.from("wallets").select("user_id, balance").in("user_id", deliveryIds),
+        supabase.from("delivery_staff_wards").select("staff_id, ward_id, wards(ward_number, panchayaths(name))").in("staff_id", deliveryIds),
       ]);
 
       staffNames = Object.fromEntries((profilesRes.data || []).map(p => [p.id, p.full_name]));
+      staffWards = wardsRes.data || [];
 
       const staffList = (profilesRes.data || []).map(p => {
         const area = (areasRes.data || []).find(a => a.staff_id === p.id);
         const deliveries = (ordersRes.data || []).filter(o => o.delivery_staff_id === p.id).length;
         const wallet = (walletsRes.data || []).find(w => w.user_id === p.id);
+        const myWards = staffWards.filter(w => w.staff_id === p.id);
         return {
           id: p.id, name: p.full_name, mobile: p.mobile,
           dob: p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("en-IN") : "—",
           area: (area?.areas as any)?.name || "—",
+          wardIds: myWards.map(w => w.ward_id),
+          locations: myWards.map(w => `${(w.wards as any)?.panchayaths?.name || "—"} · W${(w.wards as any)?.ward_number}`),
           deliveries,
           wallet: wallet ? `₹${Number(wallet.balance).toLocaleString("en-IN")}` : "₹0",
         };
@@ -117,6 +123,7 @@ const AdminDelivery = () => {
 
     setFlowOrders((orders || []).map(o => ({ ...o, staff_name: o.delivery_staff_id ? (staffNames[o.delivery_staff_id] || "Assigned") : "—" })));
     setCollections((payments || []).map(p => ({ ...p, staff_name: p.collected_by ? (staffNames[p.collected_by] || "Staff") : "—" })));
+
 
     setLoading(false);
   };
