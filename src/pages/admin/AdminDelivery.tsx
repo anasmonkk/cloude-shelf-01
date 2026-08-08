@@ -5,10 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Search, Loader2, CheckCircle, XCircle, Users, Bell, Banknote, UserPlus } from "lucide-react";
+import { Search, Loader2, CheckCircle, XCircle, Users, Bell, Banknote, UserPlus, MapPin } from "lucide-react";
+import DeliveryLocationsDialog from "@/components/DeliveryLocationsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
 
 const flowStatuses = ["confirmed", "delivery_booked", "picked_up", "delivered"] as const;
 
