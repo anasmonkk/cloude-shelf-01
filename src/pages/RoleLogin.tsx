@@ -232,6 +232,13 @@ const RoleLogin = () => {
             </p>
           )}
 
+          {role === "delivery" && (
+            <p className="text-center text-sm text-muted-foreground font-body">
+              Don't have an account?{" "}
+              <Link to="/register/delivery" className="text-primary hover:underline font-medium">Sign Up as Delivery Staff</Link>
+            </p>
+          )}
+
           <p className="text-center text-sm text-muted-foreground font-body">
             <Link to="/login" className="text-primary hover:underline font-medium">← Back to Customer Login</Link>
           </p>
